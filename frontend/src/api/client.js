@@ -1,5 +1,5 @@
 // Base API URL — adjust if your Spring Boot runs on a different port
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'http://10.83.168.41:8080';
 
 function getToken() {
   return localStorage.getItem('ite_token');

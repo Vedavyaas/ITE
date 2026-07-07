@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import NickFuryIcon from '../components/NickFuryIcon.jsx';
 import HexStoneIcon from '../components/HexStoneIcon.jsx';
@@ -25,7 +25,9 @@ export default function UserDashboard() {
   const [showIntro, setShowIntro] = useState(() => {
     return localStorage.getItem(introStorageKey) !== 'true';
   });
-  const [activeRound, setActiveRound] = useState(null); // null means show roadmap
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeRoundId = searchParams.get('round');
+  const activeRound = activeRoundId ? ROUNDS.find(r => r.id === activeRoundId) : null;
   const [loadingStone, setLoadingStone] = useState(null);
   const [completedRoundIndex, setCompletedRoundIndex] = useState(-1);
   const [snapState, setSnapState] = useState('idle'); // 'idle', 'snapping'
@@ -49,7 +51,7 @@ export default function UserDashboard() {
       }
       
       const idx = ROUND_ORDER.indexOf(status);
-      setCompletedRoundIndex(idx - 1);
+      setCompletedRoundIndex(idx);
     } catch (e) {
       console.error('Failed to fetch round progression', e);
     }
@@ -78,7 +80,7 @@ export default function UserDashboard() {
     try {
       const isAllowed = await getAckRound(round.id);
       if (isAllowed) {
-        setActiveRound(round);
+        setSearchParams({ round: round.id });
       } else {
         setErrorMsg('Access Denied. Complete your current mission first, Agent.');
       }
@@ -172,7 +174,11 @@ export default function UserDashboard() {
             
             <button 
               onClick={() => {
-                setActiveRound(null);
+                if (window.history.state && window.history.state.idx > 0) {
+                  navigate(-1);
+                } else {
+                  setSearchParams({});
+                }
                 fetchProgress();
               }}
               className="btn"
@@ -208,37 +214,37 @@ export default function UserDashboard() {
                 <MindStoneRound 
                   stoneColor={activeRound.color} 
                   stoneGlow={activeRound.glow} 
-                  onComplete={() => { setActiveRound(null); fetchProgress(); }} 
+                  onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
               ) : activeRound.id === 'SECOND' ? (
                 <SpaceStoneRound 
                   stoneColor={activeRound.color} 
                   stoneGlow={activeRound.glow} 
-                  onComplete={() => { setActiveRound(null); fetchProgress(); }} 
+                  onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
               ) : activeRound.id === 'THIRD' ? (
                 <RealityStoneRound 
                   stoneColor={activeRound.color} 
                   stoneGlow={activeRound.glow} 
-                  onComplete={() => { setActiveRound(null); fetchProgress(); }} 
+                  onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
               ) : activeRound.id === 'FOURTH' ? (
                 <PowerStoneRound 
                   stoneColor={activeRound.color} 
                   stoneGlow={activeRound.glow} 
-                  onComplete={() => { setActiveRound(null); fetchProgress(); }} 
+                  onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
               ) : activeRound.id === 'FIFTH' ? (
                 <TimeStoneRound 
                   stoneColor={activeRound.color} 
                   stoneGlow={activeRound.glow} 
-                  onComplete={() => { setActiveRound(null); fetchProgress(); }} 
+                  onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
               ) : activeRound.id === 'SIXTH' ? (
                 <SoulStoneRound 
                   stoneColor={activeRound.color} 
                   stoneGlow={activeRound.glow} 
-                  onComplete={() => { setActiveRound(null); fetchProgress(); }} 
+                  onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
               ) : (
                 <div style={{ textAlign: 'center', padding: '3rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -261,12 +267,8 @@ export default function UserDashboard() {
       <Navbar role="ROLE_USER" teamName={teamName} />
 
       <div className="user-welcome fade-in">
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--white)' }}>
-          Mission Roadmap
-        </h1>
-        <p style={{ color: 'var(--silver)', marginBottom: '3rem' }}>
-          Select your current objective, {teamName}.
-        </p>
+
+
 
         {errorMsg && (
           <div className="alert alert-error fade-in" style={{ maxWidth: '500px', margin: '0 auto 2rem auto' }}>
@@ -274,29 +276,19 @@ export default function UserDashboard() {
           </div>
         )}
 
-        <div style={{ marginBottom: '2rem', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', height: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ 
-            height: '100%', 
-            width: `${Math.max(0, ((completedRoundIndex + 1) / ROUNDS.length) * 100)}%`,
-            background: 'linear-gradient(90deg, var(--mind), var(--power))',
-            boxShadow: '0 0 10px rgba(255,255,255,0.5)',
-            transition: 'width 0.5s ease-out'
-          }} />
-        </div>
-
         <div className="roadmap-container">
-          <div className="roadmap-line" />
-          <div className="roadmap-line roadmap-line-active" style={{ 
-            height: `${Math.max(0, ((completedRoundIndex + 1) / ROUNDS.length) * 100)}%`, 
-            opacity: 1,
-            boxShadow: '0 0 10px rgba(255,255,255,0.3)',
-            transition: 'height 0.5s ease-out'
-          }} />
           {ROUNDS.map((round, index) => {
             const isLoading = loadingStone === round.id;
             const isCompleted = index <= completedRoundIndex;
+            const isActive = index === completedRoundIndex + 1;
             return (
-              <div key={round.id} className="roadmap-node-wrapper">
+              <div key={round.id} className={`roadmap-node-wrapper ${isCompleted ? 'completed-segment' : ''}`}>
+                {isActive && (
+                  <div className="active-pointer">
+                    <div className="pointer-text">Next Target</div>
+                    <div className="pointer-arrow">▼</div>
+                  </div>
+                )}
                 <button
                   className={`roadmap-node ${isLoading ? 'loading' : ''} ${isCompleted ? 'completed' : ''}`}
                   onClick={() => handleStoneClick(round)}

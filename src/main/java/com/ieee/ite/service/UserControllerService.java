@@ -109,12 +109,6 @@ public class UserControllerService {
                 return Integer.compare(r2, r1);
             }
 
-            int sr1 = getSubRoundRank(s1.subRound());
-            int sr2 = getSubRoundRank(s2.subRound());
-            if (sr1 != sr2) {
-                return Integer.compare(sr2, sr1);
-            }
-
             if (s1.timeTaken() == null && s2.timeTaken() == null) return 0;
             if (s1.timeTaken() == null) return 1;
             if (s2.timeTaken() == null) return -1;

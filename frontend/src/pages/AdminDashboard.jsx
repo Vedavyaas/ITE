@@ -45,6 +45,29 @@ function LeaderboardPanel() {
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
+  const downloadCSV = () => {
+    if (!stats || stats.length === 0) return;
+    
+    const headers = ["Rank", "Team Name", "Round", "Time Taken"];
+    const rows = stats.map((s, i) => {
+      const rank = i + 1;
+      const team = s.teamName.replace(/,/g, ''); // basic escaping
+      const round = roundLabel(s.roundProgression);
+      const time = formatDuration(s.timeTaken);
+      return [rank, team, round, time].join(",");
+    });
+    
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "leaderboard.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Summary counts
   const total = stats.length;
   const inProgress = stats.filter(s => s.roundProgression !== 'YET_TO_START').length;
@@ -77,9 +100,14 @@ function LeaderboardPanel() {
           <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.6 }}>
             Standings
           </span>
-          <button className="btn btn-ghost btn-sm" onClick={fetchStats} disabled={loading}>
-            {loading ? '...' : '↻ Refresh'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-ghost btn-sm" onClick={downloadCSV} disabled={loading || stats.length === 0}>
+              ⬇ Download CSV
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={fetchStats} disabled={loading}>
+              {loading ? '...' : '↻ Refresh'}
+            </button>
+          </div>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -99,7 +127,6 @@ function LeaderboardPanel() {
                   <th>#</th>
                   <th>Team & Members</th>
                   <th>Round</th>
-                  <th>Sub-Round</th>
                   <th>Time Taken</th>
                 </tr>
               </thead>
@@ -133,9 +160,6 @@ function LeaderboardPanel() {
                         <span className={`round-badge ${roundClass(s.roundProgression)}`}>
                           {roundLabel(s.roundProgression)}
                         </span>
-                      </td>
-                      <td style={{ color: 'var(--silver)', fontSize: '0.9rem' }}>
-                        {s.subRound !== 'YET_TO_START' ? s.subRound : '—'}
                       </td>
                       <td style={{ color: 'var(--silver)', fontSize: '0.88rem', fontFamily: 'monospace' }}>
                         {formatDuration(s.timeTaken)}

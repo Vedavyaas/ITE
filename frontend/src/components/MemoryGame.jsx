@@ -74,11 +74,11 @@ export default function MemoryGame({ gridSize = 4, onComplete, onResetClick }) {
   return (
     <div className="memory-game-container">
       <div 
-        className="memory-grid fade-in" 
+        className={`memory-grid fade-in grid-${gridSize}`} 
         style={{ 
           display: 'grid', 
           gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-          gap: '0.5rem',
+          gap: gridSize === 6 ? '0.25rem' : '0.5rem',
           maxWidth: gridSize === 4 ? '350px' : '500px',
           margin: '0 auto'
         }}

@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 
 const DURATION = 30; // 30 seconds to forge the weapon
 const HOLD_REQUIRED = 5; // Must hold above 90% for 5 seconds
-const TAP_POWER = 15; // Power added per tap (balanced to be manageable)
-const DECAY_RATE = 10; // Power lost per second
+const TAP_POWER = 6; // Power added per tap
+const DECAY_RATE = 33; // Power lost per second
 
 export default function PowerCoreGame({ onWin, onFail }) {
   const [timeLeft, setTimeLeft] = useState(DURATION);
@@ -47,7 +47,7 @@ export default function PowerCoreGame({ onWin, onFail }) {
     // Decay power
     if (gameState.current.power > 0) {
       // Small penalty: decay slightly faster when power is high
-      const currentDecay = DECAY_RATE + (gameState.current.power * 0.05);
+      const currentDecay = DECAY_RATE + (gameState.current.power * 0.3);
       gameState.current.power -= currentDecay * dt;
       if (gameState.current.power < 0) gameState.current.power = 0;
     }

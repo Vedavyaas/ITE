@@ -62,8 +62,8 @@ export default function MindStoneRound({ onComplete, stoneColor, stoneGlow }) {
       setLoading(true);
       setErrorMsg('');
       await updateSubRound('TWO');
-      setCurrentStage('done');
-      setStageComplete(false);
+      await updateRound('FIRST');
+      if (onComplete) onComplete();
     } catch (err) {
       setErrorMsg(err.message || 'Failed to save progress.');
     } finally {
