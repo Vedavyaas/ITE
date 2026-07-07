@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import Toast from '../components/Toast.jsx';
-import { getStatistics, createTeam, deleteTeam, decodeToken } from '../api/client';
+import { getStatistics, createTeam, deleteTeam, decodeToken, forceLogoutTeam } from '../api/client';
 
 const ROUNDS = ['YET_TO_START', 'FIRST', 'SECOND', 'THIRD'];
 const SUBROUNDS = ['YET_TO_START', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT'];
@@ -16,27 +16,28 @@ function roundClass(r) {
   return map[r] || 'yet';
 }
 
-function formatTime(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('en-IN', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-  });
+function formatDuration(ms) {
+  if (ms == null || isNaN(ms)) return '—';
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
-
 // ── Leaderboard panel ──────────────────────────────────────────────
 function LeaderboardPanel() {
-  const [stats, setStats]     = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [stats, setStats]       = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await getStatistics();
-      setStats(data);
+      setStats(Array.isArray(data) ? data : []);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || 'Failed to load leaderboard');
     } finally {
       setLoading(false);
     }
@@ -47,16 +48,16 @@ function LeaderboardPanel() {
   // Summary counts
   const total = stats.length;
   const inProgress = stats.filter(s => s.roundProgression !== 'YET_TO_START').length;
-  const finished   = stats.filter(s => s.roundProgression === 'THIRD').length;
+  const finished   = stats.filter(s => s.roundProgression === 'COMPLETED' && s.subRound === 'COMPLETED').length;
 
   return (
     <div className="fade-in">
       <div className="section-header">
         <h2 className="section-title">🏆 Leaderboard</h2>
-        <p className="section-subtitle">The order of the damned — ranked by progression</p>
+        <p className="section-subtitle">Squad rankings — sorted by progression</p>
       </div>
 
-      <div className="stat-cards fade-in-delay-1">
+      <div className="stat-cards fade-in fade-in-delay-1">
         <div className="stat-card">
           <div className="stat-card-value">{total}</div>
           <div className="stat-card-label">Total Teams</div>
@@ -71,9 +72,9 @@ function LeaderboardPanel() {
         </div>
       </div>
 
-      <div className="card fade-in-delay-2">
+      <div className="card fade-in fade-in-delay-2">
         <div className="refresh-row">
-          <span style={{ fontFamily: "'Cinzel', serif", fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--aged)', opacity: 0.6 }}>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.6 }}>
             Standings
           </span>
           <button className="btn btn-ghost btn-sm" onClick={fetchStats} disabled={loading}>
@@ -85,42 +86,66 @@ function LeaderboardPanel() {
 
         {!loading && stats.length === 0 && !error && (
           <div className="empty-state">
-            <div className="empty-state-icon">🕸</div>
-            <div className="empty-state-text">No souls have entered yet.</div>
+            <div className="empty-state-icon">💎</div>
+            <div className="empty-state-text">No squads on the board yet.</div>
           </div>
         )}
 
         {stats.length > 0 && (
-          <table className="leaderboard-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Team</th>
-                <th>Round</th>
-                <th>Sub-Round</th>
-                <th>Last Activity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.map((s, i) => (
-                <tr key={s.teamName}>
-                  <td className={`rank-cell rank-${i + 1}`}>
-                    {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                  </td>
-                  <td style={{ fontFamily: "'Cinzel', serif", fontSize: '0.9rem' }}>{s.teamName}</td>
-                  <td>
-                    <span className={`round-badge ${roundClass(s.roundProgression)}`}>
-                      {roundLabel(s.roundProgression)}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--aged)', fontSize: '0.9rem' }}>
-                    {s.subRound !== 'YET_TO_START' ? s.subRound : '—'}
-                  </td>
-                  <td style={{ color: 'var(--aged)', fontSize: '0.88rem' }}>{formatTime(s.timeTaken)}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team & Members</th>
+                  <th>Round</th>
+                  <th>Sub-Round</th>
+                  <th>Time Taken</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stats.map((s, i) => {
+                  const membersList = Array.isArray(s.teamMembers) ? s.teamMembers : [];
+                  const sacrificed = s.sacrificedMember && s.sacrificedMember !== 'No one' ? s.sacrificedMember : null;
+                  
+                  return (
+                    <tr key={s.teamName}>
+                      <td className={`rank-cell rank-${i + 1}`}>
+                        {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                      </td>
+                      <td>
+                        <div style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.95rem' }}>
+                          {s.teamName}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--silver)', opacity: 0.8, marginTop: '0.2rem' }}>
+                          {membersList.length > 0 ? membersList.map((m, idx) => (
+                            <span key={idx} style={{ 
+                              marginRight: '0.4rem',
+                              textDecoration: sacrificed === m ? 'line-through' : 'none',
+                              color: sacrificed === m ? 'var(--reality)' : 'inherit'
+                            }}>
+                              {sacrificed === m ? '☠ ' : ''}{m}
+                            </span>
+                          )) : 'No members'}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`round-badge ${roundClass(s.roundProgression)}`}>
+                          {roundLabel(s.roundProgression)}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--silver)', fontSize: '0.9rem' }}>
+                        {s.subRound !== 'YET_TO_START' ? s.subRound : '—'}
+                      </td>
+                      <td style={{ color: 'var(--silver)', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+                        {formatDuration(s.timeTaken)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -131,18 +156,35 @@ function LeaderboardPanel() {
 function CreateTeamPanel({ onToast }) {
   const [teamName, setTeamName] = useState('');
   const [password, setPassword] = useState('');
+  const [memberCount, setMemberCount] = useState(3);
+  const [members, setMembers]   = useState(['', '', '']);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+
+  function setMember(index, value) {
+    setMembers(prev => prev.map((m, i) => i === index ? value : m));
+  }
 
   async function handleCreate(e) {
     e.preventDefault();
     setError('');
+
+    // Client-side duplicate check within the form
+    const activeMembers = members.slice(0, memberCount);
+    const trimmed = activeMembers.map(m => m.trim());
+    const unique = new Set(trimmed.filter(Boolean));
+    if (unique.size !== memberCount) {
+      setError(`All ${memberCount} member names must be filled in and unique.`);
+      return;
+    }
+
     setLoading(true);
     try {
-      await createTeam(teamName.trim(), password);
+      await createTeam(teamName.trim(), password, trimmed);
       onToast('Team created successfully!', 'success');
       setTeamName('');
       setPassword('');
+      setMembers(['', '', '']);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -152,8 +194,8 @@ function CreateTeamPanel({ onToast }) {
 
   return (
     <div className="card fade-in">
-      <h3 style={{ fontFamily: "'Cinzel', serif", fontSize: '1rem', marginBottom: '1.2rem', color: 'var(--rose)' }}>
-        ✦ Summon a New Team
+      <h3 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: '1rem', marginBottom: '1.2rem', color: 'var(--power)' }}>
+        ◆ Register a Squad
       </h3>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -164,7 +206,7 @@ function CreateTeamPanel({ onToast }) {
           <input
             id="create-team-name"
             type="text"
-            placeholder="Name their covenant..."
+            placeholder="Squad designation..."
             value={teamName}
             onChange={e => setTeamName(e.target.value)}
             required
@@ -175,20 +217,55 @@ function CreateTeamPanel({ onToast }) {
           <input
             id="create-team-password"
             type="password"
-            placeholder="Their blood oath..."
+            placeholder="Set their access key..."
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
           />
         </div>
+
+        <div style={{ marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.7 }}>
+            Team Members
+          </label>
+          <select 
+            value={memberCount} 
+            onChange={(e) => setMemberCount(parseInt(e.target.value))}
+            style={{ 
+              padding: '0.2rem 0.5rem', 
+              fontSize: '0.8rem', 
+              background: 'rgba(255,255,255,0.05)', 
+              color: 'var(--white)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '4px'
+            }}
+          >
+            <option value={2}>2 Members</option>
+            <option value={3}>3 Members</option>
+          </select>
+        </div>
+        
+        {members.slice(0, memberCount).map((m, i) => (
+          <div className="input-group" key={i} style={{ marginBottom: '0.6rem' }}>
+            <input
+              id={`create-member-${i + 1}`}
+              type="text"
+              placeholder={`Member ${i + 1} name...`}
+              value={m}
+              onChange={e => setMember(i, e.target.value)}
+              required
+            />
+          </div>
+        ))}
+
         <button
           id="btn-create-team"
           type="submit"
           className="btn btn-primary"
           disabled={loading}
-          style={{ width: '100%' }}
+          style={{ width: '100%', marginTop: '0.4rem' }}
         >
-          {loading ? 'Binding...' : '🩸 Create Team'}
+          {loading ? 'Creating...' : '⚡ Create Squad'}
         </button>
       </form>
     </div>
@@ -222,8 +299,8 @@ function DeleteTeamPanel({ onToast, teams }) {
 
   return (
     <div className="card fade-in">
-      <h3 style={{ fontFamily: "'Cinzel', serif", fontSize: '1rem', marginBottom: '1.2rem', color: 'var(--ember)' }}>
-        ⚰ Banish a Team
+      <h3 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: '1rem', marginBottom: '1.2rem', color: 'var(--reality)' }}>
+        ✕ Remove a Squad
       </h3>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -234,20 +311,20 @@ function DeleteTeamPanel({ onToast, teams }) {
           {teams.length > 0 ? (
             <select id="delete-team-id" value={teamId}
               onChange={e => { setTeamId(e.target.value); setConfirm(false); }} required>
-              <option value="">— Choose the condemned —</option>
+              <option value="">— Select a squad —</option>
               {teams.map(t => (
                 <option key={t.teamName} value={t.teamName}>{t.teamName}</option>
               ))}
             </select>
           ) : (
-            <input id="delete-team-id" type="text" placeholder="Name of the condemned..."
+            <input id="delete-team-id" type="text" placeholder="Squad name..."
               value={teamId} onChange={e => { setTeamId(e.target.value); setConfirm(false); }} required />
           )}
         </div>
 
         {confirm && (
           <div className="alert alert-error" style={{ marginBottom: '0.8rem' }}>
-            ⚠ Permanently banish <strong>{teamId}</strong>? Click again to confirm.
+            ⚠ Permanently delete <strong>{teamId}</strong>? Click again to confirm.
           </div>
         )}
 
@@ -258,10 +335,73 @@ function DeleteTeamPanel({ onToast, teams }) {
           disabled={loading || !teamId}
           style={{ width: '100%' }}
         >
-          {loading ? 'Banishing...' : confirm ? '⚰ Confirm Banishment' : '⚔ Banish Team'}
+          {loading ? 'Removing...' : confirm ? '✕ Confirm Removal' : '✕ Remove Squad'}
         </button>
       </form>
     </div>
+  );
+}
+
+// ── Manage Teams table ────────────────────────────────────────────
+function ManageTeamsTable({ teams, onToast }) {
+  const [loadingId, setLoadingId] = useState(null);
+
+  const handleForceLogout = async (teamName) => {
+    try {
+      setLoadingId(teamName);
+      await forceLogoutTeam(teamName);
+      if (onToast) onToast(`Force logged out team: ${teamName}`, 'success');
+    } catch (err) {
+      if (onToast) onToast(`Failed to logout ${teamName}: ${err.message}`, 'error');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  return (
+    <table className="leaderboard-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>Round</th>
+          <th>Sub-Round</th>
+          <th>Members</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {teams.map((t, i) => (
+          <tr key={t.teamName}>
+            <td className="rank-cell" style={{ color: 'var(--silver)' }}>#{i + 1}</td>
+            <td style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.92rem' }}>
+              {t.teamName}
+            </td>
+            <td>
+              <span className={`round-badge ${roundClass(t.roundProgression)}`}>
+                {roundLabel(t.roundProgression)}
+              </span>
+            </td>
+            <td style={{ color: 'var(--silver)', fontSize: '0.9rem' }}>
+              {t.subRound !== 'YET_TO_START' ? t.subRound : '—'}
+            </td>
+            <td style={{ color: 'var(--silver)', fontSize: '0.85rem' }}>
+              {Array.isArray(t.teamMembers) ? t.teamMembers.join(', ') : '—'}
+            </td>
+            <td>
+              <button 
+                className="btn btn-ghost btn-sm"
+                style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}
+                onClick={() => handleForceLogout(t.teamName)}
+                disabled={loadingId === t.teamName}
+              >
+                {loadingId === t.teamName ? '...' : 'Allow Login Again'}
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -295,18 +435,18 @@ function ManageTeamsPanel({ onToast }) {
     <div className="fade-in">
       <div className="section-header">
         <h2 className="section-title">👥 Manage Teams</h2>
-        <p className="section-subtitle">Summon or banish covenants from the realm</p>
+        <p className="section-subtitle">Register or remove squads from the gauntlet</p>
       </div>
 
-      <div className="grid-2" style={{ marginBottom: '1.5rem' }}>
+      <div className="grid-2 fade-in fade-in-delay-1" style={{ marginBottom: '1.5rem' }}>
         <CreateTeamPanel onToast={handleToast} />
         <DeleteTeamPanel onToast={handleToast} teams={teams} />
       </div>
 
-      <div className="card fade-in-delay-2">
+      <div className="card fade-in fade-in-delay-2">
         <div className="refresh-row">
-          <span style={{ fontFamily: "'Cinzel', serif", fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--aged)', opacity: 0.6 }}>
-            All Covenants ({teams.length})
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.6 }}>
+            All Teams ({teams.length})
           </span>
           <button className="btn btn-ghost btn-sm" onClick={fetchTeams} disabled={loading}>
             {loading ? '...' : '↻ Refresh'}
@@ -317,31 +457,14 @@ function ManageTeamsPanel({ onToast }) {
 
         {!loading && teams.length === 0 && !error && (
           <div className="empty-state">
-            <div className="empty-state-icon">🕸</div>
-            <div className="empty-state-text">No covenants summoned yet.</div>
+            <div className="empty-state-icon">💎</div>
+            <div className="empty-state-text">No squads registered yet.</div>
           </div>
         )}
 
-        {teams.length > 0 && (
-          <table className="leaderboard-table">
-            <thead>
-              <tr>
-                <th>#</th><th>Team Name</th><th>Round</th><th>Sub-Round</th><th>Last Activity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teams.map((t, i) => (
-                <tr key={t.teamName}>
-                  <td className="rank-cell" style={{ color: 'var(--aged)', opacity: 0.6 }}>{i + 1}</td>
-                  <td style={{ fontFamily: "'Cinzel', serif", fontSize: '0.9rem' }}>{t.teamName}</td>
-                  <td><span className={`round-badge ${roundClass(t.roundProgression)}`}>{roundLabel(t.roundProgression)}</span></td>
-                  <td style={{ color: 'var(--aged)', fontSize: '0.9rem' }}>{t.subRound !== 'YET_TO_START' ? t.subRound : '—'}</td>
-                  <td style={{ color: 'var(--aged)', fontSize: '0.88rem' }}>{formatTime(t.timeTaken)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <div className="table-responsive">
+          <ManageTeamsTable teams={teams} onToast={handleToast} />
+        </div>
       </div>
     </div>
   );

@@ -15,23 +15,31 @@ public class UserDocument {
     private String password;
     private RoundProgression roundProgression;
     private SubRound subRoundProgression;
+    private Instant startTime;
     private Instant latestRoundCompleteTime;
     private Role role;
     private boolean loggedIn;
+    private String[] teamMembers;
+    private boolean isSacrificed;
+    private String sacrificedMember;
 
     public UserDocument () {
 
     }
 
-    public UserDocument(String id, String teamName, String password, Role role) {
+    public UserDocument(String id, String teamName, String password, Role role, String[] teamMembers) {
         this.id = id;
         this.teamName = teamName;
         this.password = password;
         this.roundProgression = RoundProgression.YET_TO_START;
         this.subRoundProgression = SubRound.YET_TO_START;
+        this.startTime = null;
         this.latestRoundCompleteTime = Instant.now();
         this.role = role;
         this.loggedIn = false;
+        this.teamMembers = teamMembers;
+        this.isSacrificed = false;
+        this.sacrificedMember = "No one";
     }
 
     @Id
@@ -71,6 +79,14 @@ public class UserDocument {
         this.subRoundProgression = subRoundProgression;
     }
 
+    public Instant getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Instant startTime) {
+        this.startTime = startTime;
+    }
+
     public Instant getLatestRoundCompleteTime() {
         return latestRoundCompleteTime;
     }
@@ -93,5 +109,29 @@ public class UserDocument {
 
     public void setLoggedIn(boolean loggedIn) {
         this.loggedIn = loggedIn;
+    }
+
+    public String[] getTeamMembers() {
+        return teamMembers;
+    }
+
+    public void setTeamMembers(String[] teamMembers) {
+        this.teamMembers = teamMembers;
+    }
+
+    public boolean isSacrificed() {
+        return isSacrificed;
+    }
+
+    public void setSacrificed(boolean sacrificed) {
+        isSacrificed = sacrificed;
+    }
+
+    public String getSacrificedMember() {
+        return sacrificedMember;
+    }
+
+    public void setSacrificedMember(String sacrificedMember) {
+        this.sacrificedMember = sacrificedMember;
     }
 }

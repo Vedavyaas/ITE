@@ -1,4 +1,4 @@
 package com.ieee.ite.assets;
 
-public record TeamCredentials(String teamName, String password) {
+public record TeamCredentials(String teamName, String password, String[] teamMembers) {
 }

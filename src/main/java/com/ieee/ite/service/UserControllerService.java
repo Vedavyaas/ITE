@@ -9,11 +9,16 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class UserControllerService {
@@ -34,12 +39,33 @@ public class UserControllerService {
             throw new DuplicateCredentialsException("Team name already exists!");
         }
 
+        String[] members = teamCredentials.teamMembers();
+
+        if (members == null || (members.length != 2 && members.length != 3)) {
+            throw new DuplicateCredentialsException("Exactly 2 or 3 team members are required!");
+        }
+
+        // Check for duplicates within the submitted list
+        Set<String> memberSet = new HashSet<>(Arrays.asList(members));
+        if (memberSet.size() != members.length) {
+            throw new DuplicateCredentialsException("Team members must be unique — duplicate names found!");
+        }
+
+        // Check that no member is already registered in any other team
+        for (String member : members) {
+            if (userDocumentRepository.existsByTeamMembersContaining(member)) {
+                throw new DuplicateCredentialsException("Member \"" + member + "\" is already part of another team!");
+            }
+        }
+
         UserDocument userDocument = new UserDocument(
                 teamCredentials.teamName(),
                 teamCredentials.teamName(),
                 passwordEncoder.encode(teamCredentials.password()),
-                Role.USER
+                Role.USER,
+                members
         );
+
         userDocumentRepository.save(userDocument);
 
         return "User created successfully!";
@@ -57,12 +83,20 @@ public class UserControllerService {
     public List<Statistics> getStats() {
         return userDocumentRepository.findAll().stream()
                 .filter(user -> user.getRole() == Role.USER)
-                .map(user -> new Statistics(
-                        user.getTeamName(),
-                        user.getRoundProgression(),
-                        user.getSubRoundProgression(),
-                        user.getLatestRoundCompleteTime()
-                ))
+                .map(user -> {
+                    Long timeTakenMillis = null;
+                    if (user.getStartTime() != null && user.getLatestRoundCompleteTime() != null) {
+                        timeTakenMillis = Duration.between(user.getStartTime(), user.getLatestRoundCompleteTime()).toMillis();
+                    }
+                    return new Statistics(
+                            user.getTeamName(),
+                            user.getRoundProgression(),
+                            user.getSubRoundProgression(),
+                            timeTakenMillis,
+                            user.getTeamMembers(),
+                            user.getSacrificedMember()
+                    );
+                })
                 .sorted(getLeaderboardComparator())
                 .toList();
     }
@@ -95,6 +129,10 @@ public class UserControllerService {
             case FIRST -> 1;
             case SECOND -> 2;
             case THIRD -> 3;
+            case FOURTH -> 4;
+            case FIFTH -> 5;
+            case SIXTH -> 6;
+            case COMPLETED -> 7;
         };
     }
 
@@ -104,13 +142,23 @@ public class UserControllerService {
             case YET_TO_START -> 0;
             case ONE -> 1;
             case TWO -> 2;
-            case THREE -> 3;
-            case FOUR -> 4;
-            case FIVE -> 5;
-            case SIX -> 6;
-            case SEVEN -> 7;
-            case EIGHT -> 8;
+            case COMPLETED -> 3;
         };
+    }
+
+    public String startMission(String id) {
+        if (!userDocumentRepository.existsByTeamName(id)) {
+            throw new DuplicateCredentialsException("Team name not found!");
+        }
+
+        UserDocument userDocument = userDocumentRepository.findById(id);
+        if (userDocument.getStartTime() == null) {
+            Instant now = Instant.now();
+            userDocument.setStartTime(now);
+            userDocument.setLatestRoundCompleteTime(now);
+            userDocumentRepository.save(userDocument);
+        }
+        return "Mission started!";
     }
 
     public String updateRound(String id, RoundProgression roundProgression) {
@@ -198,5 +246,75 @@ public class UserControllerService {
         }
 
         return new JWTToken(token);
+    }
+
+    public RoundProgression getRoundStatus(String id) {
+        if (!userDocumentRepository.existsByTeamName(id)) {
+            throw new DuplicateCredentialsException("Team name not found!");
+        }
+
+        return userDocumentRepository.findById(id).getRoundProgression();
+    }
+
+    public Boolean hasMissionStarted(String id) {
+        if (!userDocumentRepository.existsByTeamName(id)) {
+            throw new DuplicateCredentialsException("Team name not found!");
+        }
+
+        return userDocumentRepository.findById(id).getStartTime() != null;
+    }
+
+    @Transactional
+    public String sacrificeMate(String id, String teamMemberName) {
+        if (!userDocumentRepository.existsByTeamName(id)) {
+            throw new DuplicateCredentialsException("Team name not found!");
+        }
+
+        UserDocument userDocument = userDocumentRepository.findById(id);
+        if (userDocument.isSacrificed()) {
+            throw new DuplicateCredentialsException("Already Sacrificed");
+        }
+
+        String[] team = userDocument.getTeamMembers();
+
+        boolean isTeamMatePresent = false;
+        for (var member : team) {
+            if (member.matches(teamMemberName)) {
+                isTeamMatePresent = true;
+                break;
+            }
+        }
+
+        if (!isTeamMatePresent) {
+            throw new DuplicateCredentialsException("Team mate with given id doesnt exist!");
+        }
+
+        userDocument.setSacrificed(true);
+        userDocument.setSacrificedMember(teamMemberName);
+        userDocumentRepository.save(userDocument);
+
+        return "Sacrifice successful!";
+    }
+
+    public List<String> getTeamMember(String id) {
+        if (!userDocumentRepository.existsByTeamName(id)) {
+            throw new DuplicateCredentialsException("Team name not found!");
+        }
+
+        UserDocument userDocument = userDocumentRepository.findById(id);
+        return Arrays.stream(userDocument.getTeamMembers()).toList();
+    }
+
+    public String changeAccess(String teamId) {
+        if (!userDocumentRepository.existsByTeamName(teamId)) {
+            throw new DuplicateCredentialsException("Team name not found!");
+        }
+
+        UserDocument userDocument = userDocumentRepository.findById(teamId);
+        userDocument.setLoggedIn(false);
+
+        userDocumentRepository.save(userDocument);
+
+        return "Changed!";
     }
 }

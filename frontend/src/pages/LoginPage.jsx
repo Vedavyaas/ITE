@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, decodeToken } from '../api/client';
+import ShieldIcon from '../components/ShieldIcon.jsx';
 
 export default function LoginPage() {
   const [teamName, setTeamName] = useState('');
@@ -34,18 +35,25 @@ export default function LoginPage() {
       <div className="bg-mist" />
 
       <div className="login-box fade-in">
-        {/* Blood accent line at top */}
+        {/* Infinity stones gradient accent */}
         <div className="blood-accent" style={{ borderRadius: '12px 12px 0 0', marginBottom: '-1px' }} />
 
         <div className="card" style={{ borderRadius: '0 0 12px 12px', padding: '2.5rem 2rem' }}>
 
           <div className="login-crest">
-            <span className="crest-icon">🦇</span>
-            <h1 className="login-title">[name]</h1>
-            <p className="login-subtitle">Enter if you dare, child of the night</p>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '0.5rem',
+              animation: 'shieldGlow 3s ease-in-out infinite',
+            }}>
+              <ShieldIcon size={110} />
+            </div>
+            <h1 className="login-title">Capture The Gauntlet</h1>
+            <p className="login-subtitle">Wield the stones. Prove your worth.</p>
           </div>
 
-          <div className="ornament-divider">✦</div>
+          <div className="ornament-divider">◆</div>
 
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -55,7 +63,7 @@ export default function LoginPage() {
               <input
                 id="teamName"
                 type="text"
-                placeholder="Your covenant's name..."
+                placeholder="Your squad's designation..."
                 value={teamName}
                 onChange={e => setTeamName(e.target.value)}
                 required
@@ -64,11 +72,11 @@ export default function LoginPage() {
             </div>
 
             <div className="input-group">
-              <label htmlFor="password">Blood Oath (Password)</label>
+              <label htmlFor="password">Access Key</label>
               <input
                 id="password"
                 type="password"
-                placeholder="Whisper the incantation..."
+                placeholder="Enter your cipher..."
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -83,20 +91,20 @@ export default function LoginPage() {
               disabled={loading}
               style={{ width: '100%', marginTop: '0.5rem', padding: '0.85rem' }}
             >
-              {loading ? 'Awakening...' : '⚔ Enter the Sanctum'}
+              {loading ? 'Assembling...' : '⚡ Assemble'}
             </button>
           </form>
 
           <p style={{
             textAlign: 'center',
             marginTop: '1.5rem',
-            fontFamily: "'EB Garamond', serif",
-            fontStyle: 'italic',
-            fontSize: '0.85rem',
-            color: 'var(--aged)',
-            opacity: 0.5,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 300,
+            fontSize: '0.82rem',
+            color: 'var(--silver)',
+            opacity: 0.45,
           }}>
-            "Every creature of darkness fears the light — but not us."
+            "Whatever it takes."
           </p>
         </div>
       </div>

@@ -1,13 +1,8 @@
 package com.ieee.ite.assets;
 
 public enum SubRound {
+    YET_TO_START,
     ONE,
     TWO,
-    THREE,
-    FOUR,
-    FIVE,
-    SIX,
-    SEVEN,
-    EIGHT,
-    YET_TO_START
+    COMPLETED
 }
