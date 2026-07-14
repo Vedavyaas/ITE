@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 
 const EVENTS = [
-  { id: 1, text: "The Avengers defeat Ultron in Sokovia" },
-  { id: 2, text: "Doctor Strange surrenders the Time Stone to Thanos" },
-  { id: 3, text: "Thor strikes Thanos in the chest with Stormbreaker" },
-  { id: 4, text: "Thanos snaps his fingers (The Decimation)" },
-  { id: 5, text: "Wanda confronts Thanos for revenge ('You took everything from me')" },
-  { id: 6, text: "Iron Man sacrifices himself to defeat Thanos" }
+  { id: 1, text: "Invention of the Wheel" },
+  { id: 2, text: "Invention of the Lightbulb" },
+  { id: 3, text: "First successful Airplane flight" },
+  { id: 4, text: "First humans land on the Moon" },
+  { id: 5, text: "Release of the first Smartphone" }
 ];
 
 function shuffleArray(array) {
@@ -57,7 +56,7 @@ export default function TimeStoneGame({ onWin, onFail }) {
   return (
     <div className="time-stone-container fade-in" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
       <p style={{ color: 'var(--silver)', marginBottom: '1.5rem', textAlign: 'center', fontSize: '0.95rem' }}>
-        Sort the events by their <strong>Movie Release Order</strong>.
+        Sort the events by their <strong>Chronological Order</strong>.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>

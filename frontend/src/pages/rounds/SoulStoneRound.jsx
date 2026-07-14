@@ -75,7 +75,7 @@ export default function SoulStoneRound({ onComplete, stoneColor, stoneGlow }) {
           A soul for a soul. One of your squad members must be left behind. The eliminated member will officially receive no rewards in case of victory. It is a painful choice, but it is the only way.
         </p>
         {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}
-        <button className="btn btn-primary" style={{ background: 'transparent', borderColor: 'var(--soul)', color: 'var(--soul)' }} onClick={handleStartSelection}>
+        <button className="btn" style={{ background: 'var(--soul)', color: '#fff', border: 'none' }} onClick={handleStartSelection}>
           We Understand
         </button>
       </div>

@@ -1,233 +1,246 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
-// Encoding: digit → ASCII → XOR 27 → 8-bit binary
-// '4'→52→47→00101111  '7'→55→44→00101100
-// '2'→50→41→00101001  '8'→56→35→00100011
+// Math equations for digit mapping
+// 4, 7, 2, 8
 const ANSWER = '4728';
 
-const ENCODED = [
-  { id: 0, label: 'BYTE 01', binary: '00101111' },
-  { id: 1, label: 'BYTE 02', binary: '00101100' },
-  { id: 2, label: 'BYTE 03', binary: '00101001' },
-  { id: 3, label: 'BYTE 04', binary: '00100011' },
+const EQUATIONS = [
+  { id: 0, label: 'EQUATION 01 (Solve for x)', text: '3x + 12 = 24' },
+  { id: 1, label: 'EQUATION 02 (Solve for y)', text: '5y - 14 = 21' },
+  { id: 2, label: 'EQUATION 03 (Solve for z)', text: '(4z + 8) / 2 = 8' },
+  { id: 3, label: 'EQUATION 04 (Solve for w)', text: '7w - 30 = 26' },
 ];
 
-const CLUES = [
-  {
-    id: 1,
-    tag: 'STEP 01',
-    title: 'Convert Binary to a Number',
-    color: '#ef4444',
-    body: 'Each card shows 8 bits (0s and 1s). Starting from the right, each position is worth double the one before it: 1, 2, 4, 8, 16, 32, 64, 128. Add up the values where you see a 1.',
-  },
-  {
-    id: 2,
-    tag: 'STEP 02',
-    title: 'XOR the Number with 27',
-    color: '#f97316',
-    body: 'Take the number from Step 1 and XOR it with 27. To XOR: compare each bit — write 1 if they differ, 0 if they match. Convert the result back to decimal. Tip: most scientific calculators have an XOR button.',
-  },
-  {
-    id: 3,
-    tag: 'STEP 03',
-    title: 'Subtract 48 to Get Your Digit',
-    color: '#dc2626',
-    body: 'The number from Step 2 is a character code. Subtract 48 from it — the result is the single digit you type into the box below that card.',
-  },
-];
+const RED    = '#E23636';
+const PURPLE = '#9333ea';
+const DIM    = 'rgba(255,255,255,0.55)';
 
 export default function RealityCipherGame({ onComplete }) {
   const [digits,   setDigits]   = useState(['', '', '', '']);
-  const [openClue, setOpenClue] = useState(null);
   const [complete, setComplete] = useState(false);
+  const [wrong,    setWrong]    = useState(false);
+  const inputRefs = useRef([]);
 
-  const isCorrect = (i, d) => d !== '' && d === ANSWER[i];
-  const isWrong   = (i, d) => d !== '' && d !== ANSWER[i];
-
-  const handleDigit = (i, raw) => {
-    const v = raw.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[i] = v;
-    setDigits(next);
-    if (next.every((d, idx) => d === ANSWER[idx]) && !complete) {
-      setComplete(true);
-      setTimeout(() => { if (onComplete) onComplete(); }, 700);
-    }
+  const focusBox = (i) => {
+    if (inputRefs.current[i]) inputRefs.current[i].focus();
   };
 
-  const solvedCount = digits.filter((d, i) => isCorrect(i, d)).length;
+  const handleKey = (i, e) => {
+    setWrong(false);
+
+    // Paste: fill all 4 from clipboard text
+    if (e.type === 'paste') {
+      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+      const next = ['', '', '', ''];
+      pasted.split('').forEach((ch, idx) => { next[idx] = ch; });
+      setDigits(next);
+      focusBox(Math.min(pasted.length, 3));
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'Backspace') {
+      if (digits[i] !== '') {
+        // clear current
+        const next = [...digits]; next[i] = ''; setDigits(next);
+      } else if (i > 0) {
+        // move back and clear
+        const next = [...digits]; next[i - 1] = ''; setDigits(next);
+        focusBox(i - 1);
+      }
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' && i > 0)  { focusBox(i - 1); return; }
+    if (e.key === 'ArrowRight' && i < 3) { focusBox(i + 1); return; }
+
+    const ch = e.key.replace(/\D/g, '');
+    if (!ch) return;
+    const next = [...digits]; next[i] = ch; setDigits(next);
+    if (i < 3) focusBox(i + 1);
+    e.preventDefault();
+  };
+
+  const handleSubmit = () => {
+    if (digits.join('') === ANSWER && !complete) {
+      setComplete(true);
+      setTimeout(() => { if (onComplete) onComplete(); }, 700);
+    } else {
+      setWrong(true);
+    }
+  };
 
   return (
     <div style={{ fontFamily: "'Rajdhani', sans-serif" }}>
 
-      {/* ── Top bar ── */}
+      {/* ══════════ TEAM NOTE ══════════ */}
       <div style={{
-        background: 'rgba(239,68,68,0.05)',
-        border: '1px solid rgba(239,68,68,0.15)',
+        background: 'rgba(147,51,234,0.08)',
+        border: '1px solid rgba(147,51,234,0.25)',
+        borderLeft: `3px solid ${PURPLE}`,
         borderRadius: '8px',
-        padding: '0.65rem 0.85rem',
-        marginBottom: '1rem',
+        padding: '0.75rem 1rem',
+        marginBottom: '1.25rem',
+        fontSize: '0.78rem',
+        color: DIM,
+        lineHeight: 1.6,
       }}>
-        <div style={{ fontSize: '0.48rem', color: '#ef4444', letterSpacing: '2.5px', marginBottom: '0.15rem' }}>
-          S.H.I.E.L.D. INTERCEPT SYSTEM v2.1
+        <span style={{ color: '#c084fc', fontWeight: 700 }}>TEAM STRATEGY — </span>
+        Each byte can be decoded <strong style={{ color: '#fff' }}>independently</strong>.
+        Assign one byte per team member, decode it separately, then combine all four digits into the final code together.
+      </div>
+
+      {/* ══════════ DECODE STEPS ══════════ */}
+      <div style={{
+        background: 'rgba(0,0,0,0.35)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '10px',
+        padding: '0.85rem 1rem',
+        marginBottom: '1.25rem',
+      }}>
+        <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', marginBottom: '0.65rem' }}>
+          ▸ DECODE PROCEDURE
         </div>
-        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
-          Decode each encrypted byte → enter the decoded digit → unlock the Reality Stone
+
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginBottom: '0.65rem' }}>
+          <span style={{ background: RED, color: '#fff', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.45rem', flexShrink: 0, letterSpacing: '1px' }}>01</span>
+          <div>
+            <div style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, marginBottom: '0.15rem' }}>Solve the Equations</div>
+            <div style={{ fontSize: '0.7rem', color: DIM, lineHeight: 1.5 }}>
+              Each equation yields a single digit. Solve for the unknown variable in each equation.
+            </div>
+          </div>
+        </div>
+
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '0.5rem 0' }} />
+
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+          <span style={{ background: PURPLE, color: '#fff', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.45rem', flexShrink: 0, letterSpacing: '1px' }}>02</span>
+          <div>
+            <div style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, marginBottom: '0.15rem' }}>Combine the Digits</div>
+            <div style={{ fontSize: '0.7rem', color: DIM, lineHeight: 1.5 }}>
+              Enter the resulting digits in order from 01 to 04 to unlock the cipher.
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Byte cards — 2×2 ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem', marginBottom: '1rem' }}>
-        {ENCODED.map(({ id, label, binary }) => {
-          const d   = digits[id];
-          const ok  = isCorrect(id, d);
-          const bad = isWrong(id, d);
-
-          return (
-            <div key={id} style={{
-              background: '#000d08',
-              border: '2px solid rgba(0,255,80,0.15)',
-              borderRadius: '10px',
-              padding: '0.75rem 0.6rem',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '0.5rem',
+      {/* ══════════ EQUATIONS — one by one ══════════ */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
+        {EQUATIONS.map(({ id, label, text }) => (
+          <div key={id} style={{
+            background: 'rgba(226,54,54,0.04)',
+            border: '1px solid rgba(226,54,54,0.18)',
+            borderRadius: '10px',
+            padding: '0.85rem 1rem',
+          }}>
+            <div style={{ fontSize: '0.48rem', color: 'rgba(226,54,54,0.55)', letterSpacing: '2px', marginBottom: '0.35rem' }}>
+              {label}
+            </div>
+            <div style={{
+              fontFamily: 'monospace',
+              fontSize: '1.35rem',
+              color: '#ff6b6b',
+              letterSpacing: '4px',
+              lineHeight: 1,
             }}>
-              {/* Label */}
-              <div style={{ fontSize: '0.48rem', color: 'rgba(0,255,80,0.4)', letterSpacing: '2px', fontFamily: 'monospace' }}>
-                {label}
-              </div>
+              {text}
+            </div>
+          </div>
+        ))}
+      </div>
 
-              {/* Binary — two nibble rows */}
-              <div style={{
+      {/* ══════════ FINAL CODE + SUBMIT ══════════ */}
+      <div style={{
+        background: 'rgba(226,54,54,0.06)',
+        border: '1px solid rgba(226,54,54,0.22)',
+        borderRadius: '10px',
+        padding: '1rem',
+      }}>
+        <div style={{ fontSize: '0.5rem', color: RED, letterSpacing: '2.5px', marginBottom: '0.85rem', textAlign: 'center' }}>
+          ▸ FINAL UNLOCK CODE
+        </div>
+
+        {/* OTP-style inputs — auto-advance on digit, backspace goes back */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+          {digits.map((d, i) => (
+            <input
+              key={i}
+              ref={el => inputRefs.current[i] = el}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={d}
+              onChange={() => {}}   /* controlled via onKeyDown */
+              onKeyDown={e => handleKey(i, e)}
+              onPaste={e => handleKey(i, e)}
+              onFocus={e => e.target.select()}
+              placeholder="-"
+              style={{
+                width: '40px',
+                height: '40px',
+                fontSize: '1.2rem',
                 fontFamily: 'monospace',
-                fontSize: '1rem',
-                color: '#00ff50',
-                textShadow: '0 0 8px rgba(0,255,80,0.5)',
-                letterSpacing: '3px',
-                lineHeight: 1.5,
-              }}>
-                {binary.slice(0, 4)}<br />{binary.slice(4)}
-              </div>
-
-              {/* Input directly below binary */}
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={d}
-                onChange={e => handleDigit(id, e.target.value)}
-                placeholder="?"
-                style={{
-                  width: '52px',
-                  height: '52px',
-                  fontSize: '1.8rem',
-                  fontFamily: "'Rajdhani', monospace",
-                  fontWeight: 700,
-                  textAlign: 'center',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '2px solid rgba(255,255,255,0.12)',
-                  borderRadius: '8px',
-                  color: 'var(--white)',
-                  outline: 'none',
-                  caretColor: '#ef4444',
-                  transition: 'all 0.15s ease',
-                }}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Progress ── */}
-      <div style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.52rem', color: 'rgba(255,255,255,0.22)', marginBottom: '0.3rem', letterSpacing: '1px' }}>
-          <span>BYTES DECODED</span>
-          <span style={{ color: solvedCount === 4 ? '#22c55e' : 'rgba(255,255,255,0.3)' }}>{solvedCount} / 4</span>
+                fontWeight: 700,
+                textAlign: 'center',
+                background: 'rgba(255,255,255,0.04)',
+                border: '2px solid rgba(255,255,255,0.12)',
+                borderRadius: '8px',
+                color: '#fff',
+                outline: 'none',
+                caretColor: 'transparent',
+              }}
+            />
+          ))}
         </div>
-        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${(solvedCount / 4) * 100}%`,
-            background: 'linear-gradient(90deg, #ef4444, #22c55e)',
-            borderRadius: '2px',
-            transition: 'width 0.35s ease',
-          }} />
-        </div>
+
+        {wrong && !complete && (
+          <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.75rem', marginBottom: '0.75rem', letterSpacing: '1px' }}>
+            ✗ Incorrect — check your calculations
+          </div>
+        )}
+
+        {complete ? (
+          <div className="fade-in" style={{
+            padding: '0.75rem',
+            background: 'rgba(34,197,94,0.1)',
+            border: '1px solid rgba(34,197,94,0.4)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            fontSize: '0.78rem',
+            color: '#22c55e',
+            letterSpacing: '2px',
+            fontWeight: 700,
+          }}>
+            ✓ CIPHER DECODED — ACCESS GRANTED
+          </div>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            disabled={digits.some(d => d === '')}
+            style={{
+              width: '100%',
+              padding: '0.85rem',
+              background: digits.some(d => d === '')
+                ? 'rgba(255,255,255,0.05)'
+                : 'linear-gradient(135deg, #E23636 0%, #9B1C1C 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              color: digits.some(d => d === '') ? 'rgba(255,255,255,0.3)' : '#fff',
+              fontFamily: "'Rajdhani', sans-serif",
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+              cursor: digits.some(d => d === '') ? 'not-allowed' : 'pointer',
+            }}
+          >
+            SUBMIT CODE
+          </button>
+        )}
       </div>
 
-      {/* ── Clues ── */}
-      <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '2px', marginBottom: '0.5rem' }}>
-        FIELD INTELLIGENCE
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        {CLUES.map(clue => {
-          const isOpen = openClue === clue.id;
-          return (
-            <div key={clue.id} style={{
-              background: 'rgba(0,5,15,0.92)',
-              border: `1px solid ${clue.color}25`,
-              borderLeft: `3px solid ${clue.color}`,
-              borderRadius: '6px',
-              overflow: 'hidden',
-            }}>
-              <button
-                onClick={() => setOpenClue(isOpen ? null : clue.id)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.65rem 0.85rem',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <span style={{ fontSize: '0.45rem', color: clue.color, letterSpacing: '2px' }}>{clue.tag}</span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--white)', fontWeight: 600 }}>{clue.title}</span>
-                </div>
-                <span style={{
-                  fontSize: '0.6rem', color: clue.color, flexShrink: 0,
-                  display: 'inline-block',
-                  transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-                  transition: 'transform 0.2s',
-                }}>▼</span>
-              </button>
-
-              {isOpen && (
-                <div style={{ padding: '0 0.85rem 0.8rem', borderTop: `1px solid ${clue.color}18` }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--silver)', lineHeight: 1.65, margin: '0.5rem 0' }}>
-                    {clue.body}
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Success flash ── */}
-      {complete && (
-        <div className="fade-in" style={{
-          marginTop: '1rem',
-          padding: '0.75rem',
-          background: 'rgba(34,197,94,0.1)',
-          border: '1px solid rgba(34,197,94,0.4)',
-          borderRadius: '8px',
-          textAlign: 'center',
-          fontSize: '0.78rem',
-          color: '#22c55e',
-          letterSpacing: '2px',
-          fontWeight: 700,
-        }}>
-          ✓ CIPHER DECODED — ACCESS GRANTED
-        </div>
-      )}
     </div>
   );
 }

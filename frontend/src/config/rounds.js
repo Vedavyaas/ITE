@@ -43,8 +43,8 @@ export const ROUNDS = [
     glow:  'rgba(239,68,68,0.55)',
     emoji: '❤️',
     title: 'The Reality Stone',
-    brief: 'The Reality Stone warps what is real — and it has done exactly that to its own unlock code. S.H.I.E.L.D. intercepted a 4-byte Aether-encrypted payload, but the data is disguised. Your squad must break the cipher layer by layer: binary decoding, XOR decryption, and ASCII mapping. Only a team that understands the mathematics of reality can unlock this Stone.',
-    hint:  'Think in bits. The Aether speaks in binary. What it hides, logic can reveal.',
+    brief: 'The Reality Stone warps what is real — and it has done exactly that to its own unlock code. S.H.I.E.L.D. intercepted an Aether-encrypted payload, but the data is disguised behind a mathematical lock. Your squad must break the cipher by solving a series of equations. Only a team that understands the mathematics of reality can unlock this Stone.',
+    hint:  'Divide and conquer. Each equation yields a single digit of the unlock code.',
   },
   {
     id:    'FOURTH',

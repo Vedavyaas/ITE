@@ -1,32 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 // ── Target signal (hidden from player) ───────────────────────────────────────
-const TGT_FREQ  = 1.2;   // Hz
+const TGT_FREQ = 1.2;   // Hz
 const TGT_PHASE = 0;     // degrees
-const TGT_AMP   = 1.0;   // normalised
+const TGT_AMP = 1.0;   // normalised
 
 // ── Game rules ───────────────────────────────────────────────────────────────
-const DURATION         = 40;   // seconds
-const LOCK_REQUIRED    = 3;    // seconds above threshold to win
-const MATCH_THRESHOLD  = 88;   // % match required
+const DURATION = 60;   // seconds
+const LOCK_REQUIRED = 3;    // seconds above threshold to win
+const MATCH_THRESHOLD = 88;   // % match required
 
 // ── Player starting values (intentionally wrong) ─────────────────────────────
-const INIT_FREQ  = 1.85;
+const INIT_FREQ = 1.85;
 const INIT_PHASE = 115;
-const INIT_AMP   = 0.55;
+const INIT_AMP = 0.55;
 
 // ── Compute RMS-based match % ─────────────────────────────────────────────────
 function calcMatch(freq, phaseDeg, amp) {
-  const N   = 400;
+  const N = 400;
   const dur = 2 / TGT_FREQ;
   let errSum = 0, tgtSum = 0;
   const pr = phaseDeg * Math.PI / 180;
   for (let i = 0; i < N; i++) {
-    const t  = (i / N) * dur;
+    const t = (i / N) * dur;
     const ty = Math.sin(2 * Math.PI * TGT_FREQ * t) * TGT_AMP;
     const py = Math.sin(2 * Math.PI * freq * t + pr) * amp;
-    errSum  += (ty - py) ** 2;
-    tgtSum  += ty ** 2;
+    errSum += (ty - py) ** 2;
+    tgtSum += ty ** 2;
   }
   const rmsErr = Math.sqrt(errSum / N);
   const rmsTgt = Math.sqrt(tgtSum / N);
@@ -147,36 +147,36 @@ function TechSlider({ id, label, value, min, max, step, unit, onChange, color, s
 // ── Main game ─────────────────────────────────────────────────────────────────
 export default function PowerCoreGame({ onWin, onFail }) {
   const canvasRef = useRef(null);
-  const rafRef    = useRef(null);
+  const rafRef = useRef(null);
 
   const [timeLeft, setTimeLeft] = useState(DURATION);
   const [matchPct, setMatchPct] = useState(0);
   const [lockTime, setLockTime] = useState(0);
-  const [freq,  setFreq]  = useState(INIT_FREQ);
+  const [freq, setFreq] = useState(INIT_FREQ);
   const [phase, setPhase] = useState(INIT_PHASE);
-  const [amp,   setAmp]   = useState(INIT_AMP);
+  const [amp, setAmp] = useState(INIT_AMP);
 
   const G = useRef({
-    offset:   0,
+    offset: 0,
     timeLeft: DURATION,
     lockTime: 0,
     lastTime: null,
-    status:   'playing',
-    freq:  INIT_FREQ,
+    status: 'playing',
+    freq: INIT_FREQ,
     phase: INIT_PHASE,
-    amp:   INIT_AMP,
+    amp: INIT_AMP,
   });
 
   // ── Draw ──────────────────────────────────────────────────────────────────
   const drawFrame = useCallback((offset, freq, phaseDeg, amp, matchPct) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx  = canvas.getContext('2d');
-    const W    = canvas.width;
-    const H    = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
     const midY = H / 2;
     const ampPx = H * 0.34;
-    const DUR   = 2 / TGT_FREQ; // time window = 2 target periods
+    const DUR = 2 / TGT_FREQ; // time window = 2 target periods
     const phRad = phaseDeg * Math.PI / 180;
     const locked = matchPct >= MATCH_THRESHOLD;
 
@@ -191,8 +191,8 @@ export default function PowerCoreGame({ onWin, onFail }) {
     // Grid
     ctx.strokeStyle = 'rgba(0,255,160,0.055)';
     ctx.lineWidth = 1;
-    for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(W/8*i,0); ctx.lineTo(W/8*i,H); ctx.stroke(); }
-    for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(0,H/4*i); ctx.lineTo(W,H/4*i); ctx.stroke(); }
+    for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(W / 8 * i, 0); ctx.lineTo(W / 8 * i, H); ctx.stroke(); }
+    for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(0, H / 4 * i); ctx.lineTo(W, H / 4 * i); ctx.stroke(); }
     // Centre dashed
     ctx.strokeStyle = 'rgba(0,255,160,0.12)';
     ctx.setLineDash([4, 6]);
@@ -238,10 +238,10 @@ export default function PowerCoreGame({ onWin, onFail }) {
 
     // ── Target wave (green, solid) ──
     ctx.save();
-    ctx.shadowBlur  = 18;
+    ctx.shadowBlur = 18;
     ctx.shadowColor = '#00ffaa';
     ctx.strokeStyle = '#00ffaa';
-    ctx.lineWidth   = 2.8;
+    ctx.lineWidth = 2.8;
     ctx.beginPath();
     for (let x = 0; x <= W; x++) {
       const t = (x / W) * DUR;
@@ -250,9 +250,9 @@ export default function PowerCoreGame({ onWin, onFail }) {
     }
     ctx.stroke();
     // bright centre line
-    ctx.shadowBlur  = 3;
+    ctx.shadowBlur = 3;
     ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth   = 1;
+    ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 0; x <= W; x++) {
       const t = (x / W) * DUR;
@@ -265,10 +265,10 @@ export default function PowerCoreGame({ onWin, onFail }) {
     // ── Player wave (cyan dashed → white solid when locked) ──
     const pCol = locked ? '#ffffff' : '#00d4ff';
     ctx.save();
-    ctx.shadowBlur  = locked ? 28 : 14;
+    ctx.shadowBlur = locked ? 28 : 14;
     ctx.shadowColor = locked ? '#ffffff' : '#00d4ff';
     ctx.strokeStyle = pCol;
-    ctx.lineWidth   = locked ? 2.8 : 2.2;
+    ctx.lineWidth = locked ? 2.8 : 2.2;
     if (!locked) ctx.setLineDash([7, 4]);
     ctx.beginPath();
     for (let x = 0; x <= W; x++) {
@@ -285,10 +285,10 @@ export default function PowerCoreGame({ onWin, onFail }) {
       const auraAlpha = 0.18 + 0.07 * Math.sin(Date.now() * 0.005);
       ctx.save();
       ctx.globalAlpha = auraAlpha;
-      ctx.shadowBlur  = 50;
+      ctx.shadowBlur = 50;
       ctx.shadowColor = '#00d4ff';
       ctx.strokeStyle = '#00d4ff';
-      ctx.lineWidth   = 8;
+      ctx.lineWidth = 8;
       ctx.beginPath();
       for (let x = 0; x <= W; x++) {
         const t = (x / W) * DUR;
@@ -334,7 +334,7 @@ export default function PowerCoreGame({ onWin, onFail }) {
     const dt = Math.min((time - G.current.lastTime) / 1000, 0.1);
     G.current.lastTime = time;
 
-    G.current.offset   += dt * TGT_FREQ * Math.PI * 2;
+    G.current.offset += dt * TGT_FREQ * Math.PI * 2;
     G.current.timeLeft -= dt;
 
     const match = calcMatch(G.current.freq, G.current.phase, G.current.amp);
@@ -372,13 +372,13 @@ export default function PowerCoreGame({ onWin, onFail }) {
   }, [gameLoop]);
 
   // ── Slider handlers — update ref immediately, state for display ───────────
-  const handleFreq  = useCallback((v) => { setFreq(v);  G.current.freq  = v; }, []);
+  const handleFreq = useCallback((v) => { setFreq(v); G.current.freq = v; }, []);
   const handlePhase = useCallback((v) => { setPhase(v); G.current.phase = v; }, []);
-  const handleAmp   = useCallback((v) => { setAmp(v);   G.current.amp   = v; }, []);
+  const handleAmp = useCallback((v) => { setAmp(v); G.current.amp = v; }, []);
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const locked   = matchPct >= MATCH_THRESHOLD;
-  const lockPct  = Math.min(100, (lockTime / LOCK_REQUIRED) * 100);
+  const locked = matchPct >= MATCH_THRESHOLD;
+  const lockPct = Math.min(100, (lockTime / LOCK_REQUIRED) * 100);
   const timeWarn = timeLeft < 12;
   const matchColor = locked ? '#00d4ff' : matchPct >= 60 ? '#00ffaa' : '#a855f7';
 

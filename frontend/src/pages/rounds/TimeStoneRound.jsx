@@ -48,7 +48,7 @@ export default function TimeStoneRound({ onComplete, stoneColor, stoneGlow }) {
           The Time Stone's containment has fractured the timeline. Key events are out of sequence, threatening to rip the universe apart.
         </p>
         <p style={{ color: 'var(--time)', marginBottom: '2rem', fontStyle: 'italic' }}>
-          Mission: You must restore the timeline by sorting the events into their exact <strong>Movie Release Order</strong>.
+          Mission: You must restore the timeline by sorting the events into their exact <strong>Chronological Order</strong>.
         </p>
         <button className="btn btn-primary" style={{ background: 'var(--time)', borderColor: 'var(--time)' }} onClick={handleStart}>
           Enter the Nexus
