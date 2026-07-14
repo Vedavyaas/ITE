@@ -48,28 +48,28 @@ export default function SpaceStoneRound({ onComplete, stoneColor, stoneGlow }) {
   }
 
   return (
-    <div className="card fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
+    <div className="card fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
       <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: 'var(--white)', marginBottom: '0.5rem' }}>
-        Tesseract Navigation (6x6)
+        Tesseract Navigation (7x7)
       </h2>
       <p style={{ color: 'var(--silver)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-        Chart the absolute shortest path from Source (S) to Destination (D) while avoiding cosmic anomalies (✖).
+        Chart the path with the least total energy from Source (S) to Destination (D).
       </p>
 
       {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}
 
       {!stageComplete ? (
-        <PathfinderGame 
-          onComplete={handleGameComplete} 
-          onResetClick={handleReset} 
+        <PathfinderGame
+          onComplete={handleGameComplete}
+          onResetClick={handleReset}
         />
       ) : (
         <div className="fade-in" style={{ marginTop: '2rem', padding: '2.5rem', background: 'rgba(59,130,246,0.1)', border: '1px solid var(--space)', borderRadius: '8px' }}>
           <h3 style={{ color: '#93c5fd', marginBottom: '1.5rem', fontSize: '1.3rem' }}>Optimal Route Confirmed!</h3>
           <HexStoneIcon size={64} color={stoneColor} glow={stoneGlow} />
-          
+
           <div style={{ marginTop: '2rem' }}>
-            <button 
+            <button
               className="btn btn-primary"
               onClick={handleCompleteRound}
               disabled={loading}

@@ -43,8 +43,8 @@ export const ROUNDS = [
     glow:  'rgba(239,68,68,0.55)',
     emoji: '❤️',
     title: 'The Reality Stone',
-    brief: 'The Reality Stone — the Aether — can alter the very fabric of what is real. Nothing is as it seems here. Unravel the illusion your team is presented with and claim your prize.',
-    hint:  null,
+    brief: 'The Reality Stone warps what is real — and it has done exactly that to its own unlock code. S.H.I.E.L.D. intercepted a 4-byte Aether-encrypted payload, but the data is disguised. Your squad must break the cipher layer by layer: binary decoding, XOR decryption, and ASCII mapping. Only a team that understands the mathematics of reality can unlock this Stone.',
+    hint:  'Think in bits. The Aether speaks in binary. What it hides, logic can reveal.',
   },
   {
     id:    'FOURTH',
@@ -53,8 +53,8 @@ export const ROUNDS = [
     glow:  'rgba(168,85,247,0.55)',
     emoji: '💜',
     title: 'The Power Stone',
-    brief: 'The Power Stone amplifies the strength of any who wield it — to catastrophic levels. This round demands raw endurance and determination. Push your squad to its limits and claim dominance.',
-    hint:  null,
+    brief: 'The Power Stone has overloaded Tony Stark\'s Arc Reactor, throwing its harmonic field into chaos. To harness its energy without triggering a catastrophic feedback loop, your squad must manually recalibrate the reactor\'s signal parameters — frequency, phase, and amplitude — until your waveform locks onto the target resonance signature.',
+    hint:  'Precision over speed. Tune all three parameters together — one wrong value offsets the others.',
   },
   {
     id:    'FIFTH',

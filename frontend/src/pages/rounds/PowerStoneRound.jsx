@@ -55,18 +55,18 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'intro') {
     return (
-      <div className="card fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: 'var(--white)', marginBottom: '1rem' }}>
-          Nidavellir Forge: Stormbreaker
+      <div className="card fade-in" style={{ padding: '2rem', textAlign: 'center', background: 'linear-gradient(180deg, rgba(10,18,30,1) 0%, rgba(0,20,40,0.9) 100%)', border: '1px solid rgba(0,212,255,0.1)' }}>
+        <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: '#00d4ff', marginBottom: '1rem', letterSpacing: '2px' }}>
+          Stark Industries: Arc Reactor Lab
         </h2>
         <p style={{ color: 'var(--silver)', marginBottom: '1rem', lineHeight: '1.6' }}>
-          To forge the ultimate weapon, you need the heat of a dying star. The mechanism is broken—you must manually pull and hold the forge's iris open!
+          The Power Stone's raw energy has destabilised Tony Stark's Mark L Arc Reactor core. The reactor's resonance wave field is oscillating wildly. To prevent a catastrophic meltdown, you must manually inject energy pulses at the correct wave peaks.
         </p>
-        <p style={{ color: '#fca5a5', marginBottom: '2rem', fontStyle: 'italic' }}>
-          Warning: The star's energy creates massive resistance. Mash the PULL button to force the iris open and hold it steady until the Uru metal melts.
+        <p style={{ color: '#7dd3fc', marginBottom: '2rem', fontStyle: 'italic', fontSize: '1rem' }}>
+          Watch the scrolling wave on the oscilloscope. Click precisely on the glowing peak zones — the high points of the wave — to charge the reactor. Mis-clicks drain resonance. Fill to 100% before time runs out.
         </p>
-        <button className="btn btn-primary" onClick={handleStartCountdown}>
-          Awaken the Forge
+        <button className="btn btn-primary" style={{ background: 'rgba(0,212,255,0.15)', borderColor: '#00d4ff', color: '#00d4ff' }} onClick={handleStartCountdown}>
+          Initialize Calibration
         </button>
       </div>
     );
@@ -74,19 +74,21 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'countdown') {
     return (
-      <div className="card fade-in" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+      <div className="card fade-in" style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(0,10,25,0.9)' }}>
+        <div style={{ fontSize: '0.7rem', color: '#00d4ff', letterSpacing: '4px', marginBottom: '1rem', fontFamily: "'Rajdhani', sans-serif" }}>REACTOR BOOT SEQUENCE</div>
         <h1 style={{ 
           fontSize: '6rem', 
           fontFamily: "'Rajdhani', sans-serif", 
-          color: 'var(--power)',
-          textShadow: '0 0 30px rgba(168,85,247,0.8)',
+          color: '#00d4ff',
+          textShadow: '0 0 30px rgba(0,212,255,0.8)',
           margin: 0,
           animation: 'pulse-success 1s infinite'
         }}>
           {countdown}
         </h1>
-        <p style={{ color: 'var(--silver)', fontSize: '1.2rem', marginTop: '1rem' }}>
-          Prepare to pull with everything you have. Do not let the iris snap shut.
+        <p style={{ color: 'var(--silver)', fontSize: '1.1rem', marginTop: '1.5rem' }}>
+          Wave field stabilizing. Watch for&nbsp;
+          <span style={{ color: '#00ffaa', fontWeight: 700 }}>glowing peaks ▲</span>&nbsp;— click them precisely.
         </p>
       </div>
     );
@@ -95,14 +97,17 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
   if (phase === 'failed') {
     return (
       <div className="card fade-in" style={{ padding: '3rem 2rem', textAlign: 'center', border: '1px solid #ef4444', background: 'rgba(239,68,68,0.05)' }}>
-        <h2 style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '1rem', textShadow: '0 0 15px rgba(239,68,68,0.5)' }}>
-          FORGE COLLAPSED
+        <h2 style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '1rem', textShadow: '0 0 15px rgba(239,68,68,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '2px' }}>
+          REACTOR DESTABILIZED
         </h2>
-        <p style={{ color: 'var(--silver)', marginBottom: '2rem' }}>
-          The star's energy overwhelmed you. The iris snapped shut and the metal cooled.
+        <p style={{ color: 'var(--silver)', marginBottom: '0.75rem' }}>
+          Irregular pulse patterns caused a resonance cascade failure. The Arc Reactor has initiated an emergency shutdown.
+        </p>
+        <p style={{ color: '#fca5a5', fontStyle: 'italic', marginBottom: '2rem', fontSize: '0.95rem' }}>
+          "Frequency drift detected. Recalibration required." — J.A.R.V.I.S.
         </p>
         <button className="btn" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={handleRetry}>
-          Try Again
+          Restart Calibration
         </button>
       </div>
     );
@@ -110,19 +115,23 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'won') {
     return (
-      <div className="card fade-in" style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+      <div className="card fade-in" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(180deg, rgba(0,10,25,1) 0%, rgba(0,20,40,0.9) 100%)', border: '1px solid rgba(0,212,255,0.3)' }}>
         <HexStoneIcon size={80} color={stoneColor} glow={stoneGlow} />
-        <h2 style={{ fontSize: '1.8rem', color: stoneColor, marginTop: '1.5rem', marginBottom: '1rem' }}>
-          Stormbreaker Forged
+        <h2 style={{ fontSize: '1.8rem', color: '#00d4ff', marginTop: '1.5rem', marginBottom: '0.75rem', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '2px' }}>
+          Arc Reactor Calibrated
         </h2>
-        <p style={{ color: 'var(--silver)', marginBottom: '2rem', lineHeight: '1.6' }}>
-          Incredible strength, Agent! The Uru metal is melted and the weapon is complete.
+        <p style={{ color: 'var(--silver)', marginBottom: '0.75rem', lineHeight: '1.6' }}>
+          Remarkable precision, Agent. Frequency lock established at 1.20 Hz. The reactor is now channelling the Power Stone's energy at peak efficiency.
+        </p>
+        <p style={{ color: '#7dd3fc', fontStyle: 'italic', marginBottom: '2rem', fontSize: '0.95rem' }}>
+          "Resonance stabilized. Power output nominal. Nice work." — J.A.R.V.I.S.
         </p>
         {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}
         <button 
           className="btn btn-primary"
           onClick={handleCompleteRound}
           disabled={loading}
+          style={{ background: 'rgba(0,212,255,0.15)', borderColor: '#00d4ff', color: '#00d4ff' }}
         >
           {loading ? 'Transmitting...' : 'Save & Complete Mission'}
         </button>

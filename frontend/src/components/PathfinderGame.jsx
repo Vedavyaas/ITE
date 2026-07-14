@@ -1,31 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const GRID_SIZE = 6;
+const GRID_ROWS = 7;
+const GRID_COLS = 7;
 const SRC = { r: 0, c: 0 };
-const DEST = { r: 5, c: 5 };
+const DEST = { r: 6, c: 6 };
 
-// BFS to find shortest path length
+// Dijkstra to find shortest path length
 function getShortestPathLength(grid) {
-  const queue = [{ r: 0, c: 0, dist: 0 }];
-  const visited = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false));
-  visited[0][0] = true;
+  const dist = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(Infinity));
+  const visited = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(false));
+  dist[SRC.r][SRC.c] = 0;
 
   const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
 
-  while (queue.length > 0) {
-    const { r, c, dist } = queue.shift();
-    if (r === DEST.r && c === DEST.c) return dist;
+  for (let i = 0; i < GRID_ROWS * GRID_COLS; i++) {
+    let minDist = Infinity;
+    let minR = -1;
+    let minC = -1;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (!visited[r][c] && dist[r][c] < minDist) {
+          minDist = dist[r][c];
+          minR = r;
+          minC = c;
+        }
+      }
+    }
+
+    if (minR === -1 || minDist === Infinity) break;
+
+    visited[minR][minC] = true;
+
+    if (minR === DEST.r && minC === DEST.c) return minDist;
 
     for (let [dr, dc] of dirs) {
-      const nr = r + dr;
-      const nc = c + dc;
-      if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE && !visited[nr][nc] && grid[nr][nc] !== 'obstacle') {
-        visited[nr][nc] = true;
-        queue.push({ r: nr, c: nc, dist: dist + 1 });
+      const nr = minR + dr;
+      const nc = minC + dc;
+      if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS && !visited[nr][nc] && grid[nr][nc].type !== 'obstacle') {
+        const alt = minDist + grid[nr][nc].weight;
+        if (alt < dist[nr][nc]) {
+          dist[nr][nc] = alt;
+        }
       }
     }
   }
-  return -1;
+
+  return dist[DEST.r][DEST.c] === Infinity ? -1 : dist[DEST.r][DEST.c];
 }
 
 // Generate a valid grid that has a path
@@ -34,16 +54,18 @@ function generateValidGrid() {
   let shortestPath = -1;
   // Loop until a solvable grid is generated
   while (shortestPath === -1) {
-    grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill('empty'));
-    grid[SRC.r][SRC.c] = 'src';
-    grid[DEST.r][DEST.c] = 'dest';
+    grid = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null));
     
-    // Add random obstacles (~28% density)
-    for (let r = 0; r < GRID_SIZE; r++) {
-      for (let c = 0; c < GRID_SIZE; c++) {
-        if ((r === SRC.r && c === SRC.c) || (r === DEST.r && c === DEST.c)) continue;
-        if (Math.random() < 0.28) {
-          grid[r][c] = 'obstacle';
+    // Add random obstacles and weights
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (r === SRC.r && c === SRC.c) {
+          grid[r][c] = { type: 'src', weight: 0 };
+        } else if (r === DEST.r && c === DEST.c) {
+          grid[r][c] = { type: 'dest', weight: 0 };
+        } else {
+          const weight = Math.floor(Math.random() * 90) + 10; // 10 to 99 weight
+          grid[r][c] = { type: 'empty', weight };
         }
       }
     }
@@ -73,7 +95,8 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
     if (isDone) return;
     setErrorMsg('');
 
-    if (gridData.grid[r][c] === 'obstacle') {
+    const cell = gridData.grid[r][c];
+    if (cell.type === 'obstacle') {
       setErrorMsg('Cannot route through cosmic anomalies (obstacles).');
       return;
     }
@@ -107,12 +130,18 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
 
     // Reached destination?
     if (r === DEST.r && c === DEST.c) {
-      const userDist = newPath.length - 1; // Number of steps
+      let userDist = 0;
+      for (let i = 1; i < newPath.length; i++) {
+        const pr = newPath[i].r;
+        const pc = newPath[i].c;
+        userDist += gridData.grid[pr][pc].weight;
+      }
+      
       if (userDist === gridData.shortestPath) {
         setIsDone(true);
         if (onComplete) onComplete();
       } else {
-        setErrorMsg(`Destination reached, but route is suboptimal. Optimal route requires ${gridData.shortestPath} steps, you took ${userDist}. Routing reset.`);
+        setErrorMsg(`Destination reached, but route is suboptimal. Optimal route requires ${gridData.shortestPath} energy, you used ${userDist}. Routing reset.`);
         setTimeout(() => {
           setUserPath([{ r: 0, c: 0 }]);
         }, 2000);
@@ -128,25 +157,26 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
   if (!gridData) return null;
 
   return (
-    <div className="pathfinder-container">
-      {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>{errorMsg}</div>}
+    <div className="pathfinder-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+      {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1rem', fontSize: '0.8rem', width: '100%' }}>{errorMsg}</div>}
       
       <div 
         className="pathfinder-grid fade-in" 
         style={{ 
           display: 'grid', 
-          gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-          gap: '0.4rem',
-          maxWidth: '450px',
+          gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+          gap: '0.3rem',
+          width: '100%',
+          maxWidth: '460px',
           margin: '0 auto'
         }}
       >
         {gridData.grid.map((row, r) => (
-          row.map((cellType, c) => {
+          row.map((cellObj, c) => {
             const isPath = userPath.some(p => p.r === r && p.c === c);
             const isHead = isPath && userPath[userPath.length - 1].r === r && userPath[userPath.length - 1].c === c;
             
-            let classes = `path-cell ${cellType}`;
+            let classes = `path-cell ${cellObj.type}`;
             if (isPath) classes += ' path';
             if (isHead) classes += ' head';
             if (isDone && isPath) classes += ' success-path';
@@ -157,9 +187,10 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
                 className={classes}
                 onClick={() => handleCellClick(r, c)}
               >
-                {cellType === 'src' && 'S'}
-                {cellType === 'dest' && 'D'}
-                {cellType === 'obstacle' && '✖'}
+                {cellObj.type === 'src' && 'S'}
+                {cellObj.type === 'dest' && 'D'}
+                {cellObj.type === 'obstacle' && '✖'}
+                {cellObj.type === 'empty' && cellObj.weight}
               </div>
             );
           })
