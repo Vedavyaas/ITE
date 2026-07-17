@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@400;700&display=swap');
+
+.intro-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #0c0e12;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Background grid for a tech/stark industries feel */
+.intro-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    linear-gradient(rgba(226, 54, 54, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226, 54, 54, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+
+/* Base text (dimmed silhouette before reveal) */
+.text-background {
+  position: absolute;
+  text-align: center;
+  opacity: 0.15;
+  filter: grayscale(100%) blur(1px);
+}
+
+/* Revealed text (vibrant Marvel theme version) */
+.text-revealed {
+  position: absolute;
+  text-align: center;
+  /* clip-path controlled via JS */
+  will-change: clip-path;
+}
+
+/* Styling the text elements */
+.text-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.text-content h1 {
+  font-family: 'Bangers', cursive;
+  font-size: 5rem;
+  letter-spacing: 4px;
+  color: #e23636; /* Marvel Red */
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.text-content h2 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fbd615; /* Iron Man Gold */
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.text-content h3 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #ffffff;
+  letter-spacing: 3px;
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Iron man flying container */
+.ironman-container {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+  will-change: left;
+}
+
+.ironman-emoji {
+  font-size: 5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 15px rgba(226, 54, 54, 0.6));
+}
+
+.flame {
+  width: 120px;
+  height: 25px;
+  background: linear-gradient(to left, rgba(255,165,0,0) 0%, #ff4500 40%, #ffff00 80%, #ffffff 100%);
+  border-radius: 50px 0 0 50px;
+  margin-right: -15px;
+  opacity: 0.9;
+  filter: blur(3px);
+  transform-origin: right center;
+}

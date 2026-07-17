@@ -5,10 +5,10 @@ import { useState, useRef } from 'react';
 const ANSWER = '4728';
 
 const EQUATIONS = [
-  { id: 0, label: 'EQUATION 01 (Solve for x)', text: '3x + 12 = 24' },
-  { id: 1, label: 'EQUATION 02 (Solve for y)', text: '5y - 14 = 21' },
-  { id: 2, label: 'EQUATION 03 (Solve for z)', text: '(4z + 8) / 2 = 8' },
-  { id: 3, label: 'EQUATION 04 (Solve for w)', text: '7w - 30 = 26' },
+  { id: 0, label: 'EQUATION 01 (Solve for x)', text: '5(x - 2) + 3x = 22' },
+  { id: 1, label: 'EQUATION 02 (Solve for y)', text: '3(2y - 5) - 4y = -1' },
+  { id: 2, label: 'EQUATION 03 (Solve for z, z > 0)', text: '(3z² + 4) / 2 = 8' },
+  { id: 3, label: 'EQUATION 04 (Solve for w)', text: '2^(w - 5) = 8' },
 ];
 
 const RED    = '#E23636';

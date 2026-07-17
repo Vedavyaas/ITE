@@ -1,5 +1,4 @@
-// Base API URL — adjust if your Spring Boot runs on a different port
-const BASE_URL = 'http://10.83.168.41:8080';
+const BASE_URL = `http://${window.location.hostname}:8080`;
 
 function getToken() {
   return localStorage.getItem('ite_token');
@@ -163,16 +162,6 @@ export async function getTeamMembers() {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
-}
-
-/** PUT /scarifice/teamMember?teamMemberName={name} */
-export async function sacrificeTeamMember(teamMemberName) {
-  const res = await fetch(`${BASE_URL}/scarifice/teamMember?teamMemberName=${encodeURIComponent(teamMemberName)}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.text();
 }
 
 /** PUT /team/isLogged/change?teamId={id} */

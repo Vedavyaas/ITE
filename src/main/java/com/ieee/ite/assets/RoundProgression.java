@@ -6,7 +6,5 @@ public enum RoundProgression {
     SECOND,
     THIRD,
     FOURTH,
-    FIFTH,
-    SIXTH,
-    COMPLETED
+    FIFTH
 }

@@ -63,19 +63,9 @@ export const ROUNDS = [
     glow:  'rgba(34,197,94,0.55)',
     emoji: '💚',
     title: 'The Time Stone',
-    brief: 'The Time Stone — the Eye of Agamotto — allows its user to rewind, advance, and loop time itself. Speed and precision are everything here. Race against the clock and earn this stone.',
-    hint:  null,
-  },
-  {
-    id:    'SIXTH',
-    stone: 'Soul Stone',
-    color: '#f97316',
-    glow:  'rgba(249,115,22,0.55)',
-    emoji: '🧡',
-    title: 'The Soul Stone',
-    brief: 'The Soul Stone is the most enigmatic of all six. To obtain it, one must make a choice that costs everything. Your final challenge will demand everything your team has left. Are you ready?',
-    hint:  'The hardest decisions require the strongest will.',
-  },
+    brief: 'The Time Stone holds mastery over the past, present, and future. To wield it, you must prove you can navigate the timestream without breaking it. Watch the timeline closely, and repeat the exact sequence of events before the time loop collapses.',
+    hint:  'If you make a mistake, time resets. "Dormammu, I\'ve come to bargain."',
+  }
 ];
 
 // ── Nick Fury briefing ── (edit freely)
@@ -83,9 +73,9 @@ export const NICK_FURY_INTRO = {
   lines: [
     'Listen up.',
     "I'm Nick Fury — Director of S.H.I.E.L.D. And right now, I need your team.",
-    'Six Infinity Stones are scattered across our challenge zones. In the wrong hands, they can unmake half the universe.',
-    'Your mission: tackle six challenges — one per stone. Complete them in order. No skipping. No shortcuts.',
-    'Collect all six. Load the Gauntlet. Snap.',
+    'Five Infinity Stones are scattered across our challenge zones.',
+    'Your mission: tackle five challenges — one per stone. Complete them in order. No skipping. No shortcuts.',
+    'Collect all five. Wait for further instructions.',
   ],
   quote: '"Whatever it takes."',
   ctaLabel: '⚡ Begin Mission',

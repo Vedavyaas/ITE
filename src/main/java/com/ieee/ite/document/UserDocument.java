@@ -20,8 +20,6 @@ public class UserDocument {
     private Role role;
     private boolean loggedIn;
     private String[] teamMembers;
-    private boolean isSacrificed;
-    private String sacrificedMember;
 
     public UserDocument () {
 
@@ -38,8 +36,6 @@ public class UserDocument {
         this.role = role;
         this.loggedIn = false;
         this.teamMembers = teamMembers;
-        this.isSacrificed = false;
-        this.sacrificedMember = "No one";
     }
 
     @Id
@@ -117,21 +113,5 @@ public class UserDocument {
 
     public void setTeamMembers(String[] teamMembers) {
         this.teamMembers = teamMembers;
-    }
-
-    public boolean isSacrificed() {
-        return isSacrificed;
-    }
-
-    public void setSacrificed(boolean sacrificed) {
-        isSacrificed = sacrificed;
-    }
-
-    public String getSacrificedMember() {
-        return sacrificedMember;
-    }
-
-    public void setSacrificedMember(String sacrificedMember) {
-        this.sacrificedMember = sacrificedMember;
     }
 }

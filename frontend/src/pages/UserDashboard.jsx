@@ -8,11 +8,11 @@ import SpaceStoneRound from './rounds/SpaceStoneRound.jsx';
 import RealityStoneRound from './rounds/RealityStoneRound.jsx';
 import PowerStoneRound from './rounds/PowerStoneRound.jsx';
 import TimeStoneRound from './rounds/TimeStoneRound.jsx';
-import SoulStoneRound from './rounds/SoulStoneRound.jsx';
+
 import { decodeToken, getAckRound, startMission, getRoundStatus, getMissionStarted, logout } from '../api/client';
 import { ROUNDS, NICK_FURY_INTRO } from '../config/rounds';
 
-const ROUND_ORDER = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'COMPLETED'];
+const ROUND_ORDER = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'];
 
 export default function UserDashboard() {
   const token = localStorage.getItem('ite_token');
@@ -240,12 +240,7 @@ export default function UserDashboard() {
                   stoneGlow={activeRound.glow} 
                   onComplete={() => { navigate(-1); fetchProgress(); }} 
                 />
-              ) : activeRound.id === 'SIXTH' ? (
-                <SoulStoneRound 
-                  stoneColor={activeRound.color} 
-                  stoneGlow={activeRound.glow} 
-                  onComplete={() => { navigate(-1); fetchProgress(); }} 
-                />
+
               ) : (
                 <div style={{ textAlign: 'center', padding: '3rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <p style={{ color: 'var(--silver)', fontStyle: 'italic' }}>
@@ -267,7 +262,6 @@ export default function UserDashboard() {
       <Navbar role="ROLE_USER" teamName={teamName} />
 
       <div className="user-welcome fade-in">
-
 
 
         {errorMsg && (
@@ -311,7 +305,7 @@ export default function UserDashboard() {
           })}
           
           {/* Final Snap Sequence at the end of the roadmap */}
-          {roundStatus === 'COMPLETED' && (
+          {roundStatus === 'FIFTH' && (
             <div className="roadmap-node-wrapper fade-in" style={{ marginTop: '3rem' }}>
               <button
                 className={`roadmap-node completed`}
@@ -330,7 +324,7 @@ export default function UserDashboard() {
               >
                 <div style={{ textAlign: 'center', width: '100%' }}>
                   <h3 style={{ fontSize: '1.8rem', color: 'white', letterSpacing: '4px', margin: 0, fontFamily: "'Rajdhani', sans-serif", textTransform: 'uppercase' }}>
-                    {snapState === 'idle' ? 'SNAP TO WIN' : 'WAIT FOR RESULT... LOGGING OUT'}
+                    {snapState === 'idle' ? 'YOU WILL GET A CALL IF SHORTLISTED' : 'WAIT FOR RESULT... LOGGING OUT'}
                   </h3>
                 </div>
               </button>

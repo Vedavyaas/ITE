@@ -1,24 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const GRID_ROWS = 7;
-const GRID_COLS = 7;
-const SRC = { r: 0, c: 0 };
-const DEST = { r: 6, c: 6 };
-
 // Dijkstra to find shortest path length
-function getShortestPathLength(grid) {
-  const dist = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(Infinity));
-  const visited = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(false));
-  dist[SRC.r][SRC.c] = 0;
+function getShortestPathLength(grid, rows, cols, src, dest) {
+  const dist = Array.from({ length: rows }, () => Array(cols).fill(Infinity));
+  const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+  dist[src.r][src.c] = 0;
 
   const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
 
-  for (let i = 0; i < GRID_ROWS * GRID_COLS; i++) {
+  for (let i = 0; i < rows * cols; i++) {
     let minDist = Infinity;
     let minR = -1;
     let minC = -1;
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
         if (!visited[r][c] && dist[r][c] < minDist) {
           minDist = dist[r][c];
           minR = r;
@@ -31,12 +26,12 @@ function getShortestPathLength(grid) {
 
     visited[minR][minC] = true;
 
-    if (minR === DEST.r && minC === DEST.c) return minDist;
+    if (minR === dest.r && minC === dest.c) return minDist;
 
     for (let [dr, dc] of dirs) {
       const nr = minR + dr;
       const nc = minC + dc;
-      if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS && !visited[nr][nc] && grid[nr][nc].type !== 'obstacle') {
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited[nr][nc] && grid[nr][nc].type !== 'obstacle') {
         const alt = minDist + grid[nr][nc].weight;
         if (alt < dist[nr][nc]) {
           dist[nr][nc] = alt;
@@ -45,23 +40,23 @@ function getShortestPathLength(grid) {
     }
   }
 
-  return dist[DEST.r][DEST.c] === Infinity ? -1 : dist[DEST.r][DEST.c];
+  return dist[dest.r][dest.c] === Infinity ? -1 : dist[dest.r][dest.c];
 }
 
 // Generate a valid grid that has a path
-function generateValidGrid() {
+function generateValidGrid(rows, cols, src, dest) {
   let grid;
   let shortestPath = -1;
   // Loop until a solvable grid is generated
   while (shortestPath === -1) {
-    grid = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null));
+    grid = Array.from({ length: rows }, () => Array(cols).fill(null));
     
     // Add random obstacles and weights
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
-        if (r === SRC.r && c === SRC.c) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (r === src.r && c === src.c) {
           grid[r][c] = { type: 'src', weight: 0 };
-        } else if (r === DEST.r && c === DEST.c) {
+        } else if (r === dest.r && c === dest.c) {
           grid[r][c] = { type: 'dest', weight: 0 };
         } else {
           const weight = Math.floor(Math.random() * 90) + 10; // 10 to 99 weight
@@ -69,23 +64,23 @@ function generateValidGrid() {
         }
       }
     }
-    shortestPath = getShortestPathLength(grid);
+    shortestPath = getShortestPathLength(grid, rows, cols, src, dest);
   }
   return { grid, shortestPath };
 }
 
-export default function PathfinderGame({ onComplete, onResetClick }) {
+export default function PathfinderGame({ rows, cols, src, dest, onComplete, onResetClick }) {
   const [gridData, setGridData] = useState(null);
-  const [userPath, setUserPath] = useState([{ r: 0, c: 0 }]); // Always starts at src
+  const [userPath, setUserPath] = useState([src]); // Always starts at src
   const [isDone, setIsDone] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const initGame = useCallback(() => {
-    setGridData(generateValidGrid());
-    setUserPath([{ r: 0, c: 0 }]);
+    setGridData(generateValidGrid(rows, cols, src, dest));
+    setUserPath([src]);
     setIsDone(false);
     setErrorMsg('');
-  }, []);
+  }, [rows, cols, src, dest]);
 
   useEffect(() => {
     initGame();
@@ -129,7 +124,7 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
     setUserPath(newPath);
 
     // Reached destination?
-    if (r === DEST.r && c === DEST.c) {
+    if (r === dest.r && c === dest.c) {
       let userDist = 0;
       for (let i = 1; i < newPath.length; i++) {
         const pr = newPath[i].r;
@@ -143,7 +138,7 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
       } else {
         setErrorMsg(`Destination reached, but route is suboptimal. Optimal route requires ${gridData.shortestPath} energy, you used ${userDist}. Routing reset.`);
         setTimeout(() => {
-          setUserPath([{ r: 0, c: 0 }]);
+          setUserPath([src]);
         }, 2000);
       }
     }
@@ -164,7 +159,7 @@ export default function PathfinderGame({ onComplete, onResetClick }) {
         className="pathfinder-grid fade-in" 
         style={{ 
           display: 'grid', 
-          gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
           gap: '0.3rem',
           width: '100%',
           maxWidth: '460px',

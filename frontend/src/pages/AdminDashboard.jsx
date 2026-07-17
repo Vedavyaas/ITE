@@ -133,8 +133,6 @@ function LeaderboardPanel() {
               <tbody>
                 {stats.map((s, i) => {
                   const membersList = Array.isArray(s.teamMembers) ? s.teamMembers : [];
-                  const sacrificed = s.sacrificedMember && s.sacrificedMember !== 'No one' ? s.sacrificedMember : null;
-                  
                   return (
                     <tr key={s.teamName}>
                       <td className={`rank-cell rank-${i + 1}`}>
@@ -146,12 +144,8 @@ function LeaderboardPanel() {
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--silver)', opacity: 0.8, marginTop: '0.2rem' }}>
                           {membersList.length > 0 ? membersList.map((m, idx) => (
-                            <span key={idx} style={{ 
-                              marginRight: '0.4rem',
-                              textDecoration: sacrificed === m ? 'line-through' : 'none',
-                              color: sacrificed === m ? 'var(--reality)' : 'inherit'
-                            }}>
-                              {sacrificed === m ? '☠ ' : ''}{m}
+                            <span key={idx} style={{ marginRight: '0.4rem' }}>
+                              {m}
                             </span>
                           )) : 'No members'}
                         </div>
@@ -180,10 +174,11 @@ function LeaderboardPanel() {
 function CreateTeamPanel({ onToast }) {
   const [teamName, setTeamName] = useState('');
   const [password, setPassword] = useState('');
-  const [memberCount, setMemberCount] = useState(3);
-  const [members, setMembers]   = useState(['', '', '']);
+  const [memberCount, setMemberCount] = useState(2);
+  const [members, setMembers]   = useState(['', '']);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   function setMember(index, value) {
     setMembers(prev => prev.map((m, i) => i === index ? value : m));
@@ -208,7 +203,7 @@ function CreateTeamPanel({ onToast }) {
       onToast('Team created successfully!', 'success');
       setTeamName('');
       setPassword('');
-      setMembers(['', '', '']);
+      setMembers(['', '']);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -238,14 +233,36 @@ function CreateTeamPanel({ onToast }) {
         </div>
         <div className="input-group">
           <label htmlFor="create-team-password">Password</label>
-          <input
-            id="create-team-password"
-            type="password"
-            placeholder="Set their access key..."
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              id="create-team-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Set their access key..."
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ paddingRight: '2.5rem', width: '100%', boxSizing: 'border-box' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '0.5rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--silver)',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                padding: '0.2rem'
+              }}
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
         </div>
 
         <div style={{ marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -264,8 +281,8 @@ function CreateTeamPanel({ onToast }) {
               borderRadius: '4px'
             }}
           >
+            <option value={1}>1 Member</option>
             <option value={2}>2 Members</option>
-            <option value={3}>3 Members</option>
           </select>
         </div>
         

@@ -80,12 +80,6 @@ public class UserManagementController {
     }
 
     @PreAuthorize("hasAuthority('SCOPE_ROLE_USER')")
-    @PutMapping("/scarifice/teamMember")
-    public ResponseEntity<String> sacTeamMember(@RequestParam String teamMemberName, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(userControllerService.sacrificeMate(jwt.getSubject(), teamMemberName));
-    }
-
-    @PreAuthorize("hasAuthority('SCOPE_ROLE_USER')")
     @GetMapping("/get/team/members")
     public ResponseEntity<List<String>> getMembers(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(userControllerService.getTeamMember(jwt.getSubject()));

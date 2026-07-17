@@ -4,6 +4,7 @@ import HexStoneIcon from '../../components/HexStoneIcon.jsx';
 import { updateSubRound, updateRound } from '../../api/client';
 
 export default function SpaceStoneRound({ onComplete, stoneColor, stoneGlow }) {
+  const [subRoundStage, setSubRoundStage] = useState(1);
   const [stageComplete, setStageComplete] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,12 +18,25 @@ export default function SpaceStoneRound({ onComplete, stoneColor, stoneGlow }) {
     setStageComplete(false);
   };
 
+  const handleProceedStage1 = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      await updateSubRound('ONE');
+      setSubRoundStage(2);
+      setStageComplete(false); // Reset for the next stage
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to save sub-round progress.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCompleteRound = async () => {
     try {
       setLoading(true);
       setErrorMsg('');
-      // User asked for sub-round and round logic to be similar, so we update both
-      await updateSubRound('ONE');
+      await updateSubRound('TWO');
       await updateRound('SECOND');
       setIsDone(true);
       if (onComplete) onComplete();
@@ -50,7 +64,7 @@ export default function SpaceStoneRound({ onComplete, stoneColor, stoneGlow }) {
   return (
     <div className="card fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
       <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: 'var(--white)', marginBottom: '0.5rem' }}>
-        Tesseract Navigation (7x7)
+        Tesseract Navigation Stage {subRoundStage} ({subRoundStage === 1 ? '5x5' : '7x7'})
       </h2>
       <p style={{ color: 'var(--silver)', fontSize: '0.9rem', marginBottom: '2rem' }}>
         Chart the path with the least total energy from Source (S) to Destination (D).
@@ -59,24 +73,52 @@ export default function SpaceStoneRound({ onComplete, stoneColor, stoneGlow }) {
       {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}
 
       {!stageComplete ? (
-        <PathfinderGame
-          onComplete={handleGameComplete}
-          onResetClick={handleReset}
-        />
+        subRoundStage === 1 ? (
+          <PathfinderGame
+            key="stage1"
+            rows={5}
+            cols={5}
+            src={{ r: 0, c: 0 }}
+            dest={{ r: 4, c: 4 }}
+            onComplete={handleGameComplete}
+            onResetClick={handleReset}
+          />
+        ) : (
+          <PathfinderGame
+            key="stage2"
+            rows={7}
+            cols={7}
+            src={{ r: 0, c: 0 }}
+            dest={{ r: 6, c: 6 }}
+            onComplete={handleGameComplete}
+            onResetClick={handleReset}
+          />
+        )
       ) : (
         <div className="fade-in" style={{ marginTop: '2rem', padding: '2.5rem', background: 'rgba(59,130,246,0.1)', border: '1px solid var(--space)', borderRadius: '8px' }}>
           <h3 style={{ color: '#93c5fd', marginBottom: '1.5rem', fontSize: '1.3rem' }}>Optimal Route Confirmed!</h3>
           <HexStoneIcon size={64} color={stoneColor} glow={stoneGlow} />
 
           <div style={{ marginTop: '2rem' }}>
-            <button
-              className="btn btn-primary"
-              onClick={handleCompleteRound}
-              disabled={loading}
-              style={{ width: '100%', maxWidth: '300px' }}
-            >
-              {loading ? 'Transmitting...' : 'Save & Complete Mission'}
-            </button>
+            {subRoundStage === 1 ? (
+              <button
+                className="btn btn-primary"
+                onClick={handleProceedStage1}
+                disabled={loading}
+                style={{ width: '100%', maxWidth: '300px' }}
+              >
+                {loading ? 'Transmitting...' : 'Proceed to Next Sector'}
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={handleCompleteRound}
+                disabled={loading}
+                style={{ width: '100%', maxWidth: '300px' }}
+              >
+                {loading ? 'Transmitting...' : 'Save & Complete Mission'}
+              </button>
+            )}
           </div>
         </div>
       )}

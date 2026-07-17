@@ -93,8 +93,7 @@ public class UserControllerService {
                             user.getRoundProgression(),
                             user.getSubRoundProgression(),
                             timeTakenMillis,
-                            user.getTeamMembers(),
-                            user.getSacrificedMember()
+                            user.getTeamMembers()
                     );
                 })
                 .sorted(getLeaderboardComparator())
@@ -125,8 +124,6 @@ public class UserControllerService {
             case THIRD -> 3;
             case FOURTH -> 4;
             case FIFTH -> 5;
-            case SIXTH -> 6;
-            case COMPLETED -> 7;
         };
     }
 
@@ -256,38 +253,6 @@ public class UserControllerService {
         }
 
         return userDocumentRepository.findById(id).getStartTime() != null;
-    }
-
-    @Transactional
-    public String sacrificeMate(String id, String teamMemberName) {
-        if (!userDocumentRepository.existsByTeamName(id)) {
-            throw new DuplicateCredentialsException("Team name not found!");
-        }
-
-        UserDocument userDocument = userDocumentRepository.findById(id);
-        if (userDocument.isSacrificed()) {
-            throw new DuplicateCredentialsException("Already Sacrificed");
-        }
-
-        String[] team = userDocument.getTeamMembers();
-
-        boolean isTeamMatePresent = false;
-        for (var member : team) {
-            if (member.matches(teamMemberName)) {
-                isTeamMatePresent = true;
-                break;
-            }
-        }
-
-        if (!isTeamMatePresent) {
-            throw new DuplicateCredentialsException("Team mate with given id doesnt exist!");
-        }
-
-        userDocument.setSacrificed(true);
-        userDocument.setSacrificedMember(teamMemberName);
-        userDocumentRepository.save(userDocument);
-
-        return "Sacrifice successful!";
     }
 
     public List<String> getTeamMember(String id) {

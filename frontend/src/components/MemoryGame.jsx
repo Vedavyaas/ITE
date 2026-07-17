@@ -6,7 +6,7 @@ const ALL_SYMBOLS = [
   { symbol: '⚡', label: 'Thor',      color: '#FBBF24', bg: 'rgba(251,191,36,0.15)'  },
   { symbol: '🕷️', label: 'Spider',    color: '#E23636', bg: 'rgba(226,54,54,0.15)'   },
   { symbol: '🤖', label: 'Iron Man',  color: '#C8922A', bg: 'rgba(200,146,42,0.15)'  },
-  { symbol: '🛡️', label: 'Shield',    color: '#3b82f6', bg: 'rgba(59,130,246,0.15)'  },
+  { symbol: '⭐', label: 'Captain',   color: '#3b82f6', bg: 'rgba(59,130,246,0.15)'  },
   { symbol: '🌀', label: 'Strange',   color: '#22d3ee', bg: 'rgba(34,211,238,0.15)'  },
   { symbol: '🚀', label: 'Guardians', color: '#f97316', bg: 'rgba(249,115,22,0.15)'  },
   { symbol: '🦅', label: 'Falcon',    color: '#60C8F8', bg: 'rgba(96,200,248,0.15)'  },
