@@ -62,7 +62,7 @@ public class UserControllerService {
                 teamCredentials.teamName(),
                 passwordEncoder.encode(teamCredentials.password()),
                 Role.USER,
-                members
+                Arrays.asList(members)
         );
 
         userDocumentRepository.save(userDocument);
@@ -260,7 +260,7 @@ public class UserControllerService {
         }
 
         UserDocument userDocument = userDocumentRepository.findById(id);
-        return Arrays.stream(userDocument.getTeamMembers()).toList();
+        return userDocument.getTeamMembers();
     }
 
     public String changeAccess(String teamId) {

@@ -7,6 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 import java.time.Instant;
+import java.util.List;
 
 @DynamoDbBean
 public class UserDocument {
@@ -19,13 +20,13 @@ public class UserDocument {
     private Instant latestRoundCompleteTime;
     private Role role;
     private boolean loggedIn;
-    private String[] teamMembers;
+    private List<String> teamMembers;
 
     public UserDocument () {
 
     }
 
-    public UserDocument(String id, String teamName, String password, Role role, String[] teamMembers) {
+    public UserDocument(String id, String teamName, String password, Role role, List<String> teamMembers) {
         this.id = id;
         this.teamName = teamName;
         this.password = password;
@@ -111,11 +112,11 @@ public class UserDocument {
         this.loggedIn = loggedIn;
     }
 
-    public String[] getTeamMembers() {
+    public List<String> getTeamMembers() {
         return teamMembers;
     }
 
-    public void setTeamMembers(String[] teamMembers) {
+    public void setTeamMembers(List<String> teamMembers) {
         this.teamMembers = teamMembers;
     }
 }
