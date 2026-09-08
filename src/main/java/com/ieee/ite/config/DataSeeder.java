@@ -21,7 +21,7 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (userDocumentRepository.count() == 0) {
-            UserDocument userDocument = new UserDocument("admin", "admin", passwordEncoder.encode("myPass"), Role.ADMIN, null);
+            UserDocument userDocument = new UserDocument("vedavyaas", "vedavyaas", passwordEncoder.encode("SadhanaSree"), Role.ADMIN, null);
             userDocumentRepository.save(userDocument);
         }
     }

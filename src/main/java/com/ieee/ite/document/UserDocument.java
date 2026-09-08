@@ -3,12 +3,12 @@ package com.ieee.ite.document;
 import com.ieee.ite.assets.Role;
 import com.ieee.ite.assets.RoundProgression;
 import com.ieee.ite.assets.SubRound;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 import java.time.Instant;
 
-@Document(collection = "users")
+@DynamoDbBean
 public class UserDocument {
     private String id;
     private String teamName;
@@ -37,10 +37,14 @@ public class UserDocument {
         this.loggedIn = false;
         this.teamMembers = teamMembers;
     }
-
-    @Id
+    
+    @DynamoDbPartitionKey
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getTeamName() {
