@@ -42,13 +42,10 @@ public class UserDocumentRepository {
     }
 
     public long count() {
-        // Warning: This does a full table scan. 
-        // Acceptable here because it's only used by DataSeeder on startup.
         return dynamoDbTemplate.scanAll(UserDocument.class).items().stream().count();
     }
 
     public boolean existsByTeamName(String teamName) {
-        // In the previous service logic, teamName was used interchangeably with ID
         return findById(teamName) != null;
     }
 

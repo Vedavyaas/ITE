@@ -1,4 +1,4 @@
-const BASE_URL = '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function getToken() {
   return localStorage.getItem('ite_token');
@@ -172,4 +172,22 @@ export async function forceLogoutTeam(teamId) {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.text();
+}
+
+/** Unlock all teams purely at frontend level using the existing PUT /team/isLogged/change endpoint */
+export async function forceLogoutAllTeams(teams = []) {
+  if (!teams || teams.length === 0) return 'No squads to unlock.';
+
+  const results = await Promise.allSettled(
+    teams.map(t => forceLogoutTeam(t.teamName))
+  );
+
+  const succeeded = results.filter(r => r.status === 'fulfilled').length;
+  const failed = results.filter(r => r.status === 'rejected').length;
+
+  if (failed > 0 && succeeded === 0) {
+    throw new Error('Failed to unlock teams. Check your connection or permissions.');
+  }
+
+  return `Successfully unlocked ${succeeded} squad${succeeded === 1 ? '' : 's'}!`;
 }

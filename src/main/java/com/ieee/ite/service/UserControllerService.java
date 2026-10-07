@@ -40,8 +40,8 @@ public class UserControllerService {
 
         String[] members = teamCredentials.teamMembers();
 
-        if (members == null || (members.length != 2 && members.length != 3)) {
-            throw new DuplicateCredentialsException("Exactly 2 or 3 team members are required!");
+        if (members == null || members.length < 1) {
+            throw new DuplicateCredentialsException("At least 1 team member is required!");
         }
 
         // Check for duplicates within the submitted list
@@ -92,7 +92,8 @@ public class UserControllerService {
                             user.getRoundProgression(),
                             user.getSubRoundProgression(),
                             timeTakenMillis,
-                            user.getTeamMembers()
+                            user.getTeamMembers(),
+                            user.getStartTime()
                     );
                 })
                 .sorted(getLeaderboardComparator())

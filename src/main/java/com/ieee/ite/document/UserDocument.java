@@ -23,7 +23,6 @@ public class UserDocument {
     private List<String> teamMembers;
 
     public UserDocument () {
-
     }
 
     public UserDocument(String id, String teamName, String password, Role role, List<String> teamMembers) {

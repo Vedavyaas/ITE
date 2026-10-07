@@ -62,12 +62,17 @@ export default function SpaceStoneRound({ onComplete, stoneColor, stoneGlow }) {
   }
 
   return (
-    <div className="card fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-      <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: 'var(--white)', marginBottom: '0.5rem' }}>
-        Tesseract Navigation Stage {subRoundStage} ({subRoundStage === 1 ? '5x5' : '7x7'})
+    <div className="card fade-in" style={{ padding: 'clamp(1rem, 3.5vw, 2rem)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ display: 'inline-block', padding: '0.2rem 0.75rem', borderRadius: '16px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', color: '#93c5fd', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+        {subRoundStage === 1 ? 'Sub-Round 1 of 2' : 'Sub-Round 2 of 2'}
+      </div>
+      <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', color: 'var(--white)', marginBottom: '0.4rem' }}>
+        {subRoundStage === 1 ? 'Tesseract Grid: Sector Alpha (5x5)' : 'Tesseract Grid: Sector Omega (7x7)'}
       </h2>
-      <p style={{ color: 'var(--silver)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-        Chart the path with the least total energy from Source (S) to Destination (D).
+      <p style={{ color: 'var(--silver)', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', maxWidth: '520px', margin: '0 auto 1.5rem auto', lineHeight: '1.5' }}>
+        {subRoundStage === 1
+          ? 'Tap adjacent cells starting from S to chart a path to D. You must find the route with the absolute lowest total energy sum to unlock Sector Omega.'
+          : 'Grid expanded! Calculate and navigate the optimal minimum-energy route from S to D to claim the Space Stone.'}
       </p>
 
       {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}

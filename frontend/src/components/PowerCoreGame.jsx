@@ -6,13 +6,13 @@ const TGT_PHASE = 0;     // degrees
 const TGT_AMP = 1.0;   // normalised
 
 // ── Game rules ───────────────────────────────────────────────────────────────
-const DURATION = 60;   // seconds
+const DURATION = 50;   // seconds (reduced by 10s from 60s)
 const LOCK_REQUIRED = 3;    // seconds above threshold to win
 const MATCH_THRESHOLD = 88;   // % match required
 
-// ── Player starting values (intentionally wrong) ─────────────────────────────
+// ── Player starting values ───────────────────────────────────────────────────
 const INIT_FREQ = 1.85;
-const INIT_PHASE = 115;
+const INIT_PHASE = 0;   // Phase is automatically synchronized and locked to target (0°)
 const INIT_AMP = 0.55;
 
 // ── Compute RMS-based match % ─────────────────────────────────────────────────
@@ -33,7 +33,7 @@ function calcMatch(freq, phaseDeg, amp) {
   return Math.max(0, Math.min(100, (1 - rmsErr / (rmsTgt * 2.2)) * 100));
 }
 
-// ── Custom tech slider ────────────────────────────────────────────────────────
+// ── Custom tech slider with expanded touch target ────────────────────────────
 function TechSlider({ id, label, value, min, max, step, unit, onChange, color, subLabel }) {
   const trackRef = useRef(null);
   const dragging = useRef(false);
@@ -85,13 +85,13 @@ function TechSlider({ id, label, value, min, max, step, unit, onChange, color, s
     }}>
 
       {/* ── Row 1: Label + Value ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.55rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.45rem' }}>
         <div>
-          <span style={{ fontSize: '0.58rem', color, letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.8 }}>
+          <span style={{ fontSize: '0.62rem', color, letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 700 }}>
             {label}
           </span>
           {subLabel && (
-            <span style={{ fontSize: '0.48rem', color: `${color}55`, marginLeft: '0.5rem', letterSpacing: '1px' }}>{subLabel}</span>
+            <span style={{ fontSize: '0.52rem', color: `${color}88`, marginLeft: '0.5rem', letterSpacing: '1px', fontWeight: 600 }}>{subLabel}</span>
           )}
         </div>
         <div>
@@ -102,7 +102,7 @@ function TechSlider({ id, label, value, min, max, step, unit, onChange, color, s
         </div>
       </div>
 
-      {/* ── Row 2: Track ── */}
+      {/* ── Row 2: Track with generous touch area for mobile ── */}
       <div
         id={id}
         ref={trackRef}
@@ -110,33 +110,39 @@ function TechSlider({ id, label, value, min, max, step, unit, onChange, color, s
         onTouchStart={startDrag}
         style={{
           position: 'relative',
-          height: '8px',
-          background: 'rgba(255,255,255,0.07)',
-          borderRadius: '4px',
+          padding: '10px 0',
           cursor: 'ew-resize',
-          marginBottom: '0.3rem',
+          marginBottom: '0.1rem',
+          touchAction: 'none',
         }}
       >
         <div style={{
-          position: 'absolute', left: 0, top: 0,
-          height: '100%', width: `${pct}%`,
-          background: `linear-gradient(90deg, ${color}55, ${color})`,
+          position: 'relative',
+          height: '8px',
+          background: 'rgba(255,255,255,0.08)',
           borderRadius: '4px',
-          boxShadow: `0 0 8px ${color}66`,
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '50%', left: `${pct}%`,
-          transform: 'translate(-50%, -50%)',
-          width: '18px', height: '18px',
-          borderRadius: '50%',
-          background: `radial-gradient(circle, white 15%, ${color} 65%)`,
-          boxShadow: `0 0 10px ${color}, 0 0 20px ${color}55`,
-          border: '2px solid rgba(255,255,255,0.35)',
-          cursor: 'ew-resize',
-        }} />
+        }}>
+          <div style={{
+            position: 'absolute', left: 0, top: 0,
+            height: '100%', width: `${pct}%`,
+            background: `linear-gradient(90deg, ${color}55, ${color})`,
+            borderRadius: '4px',
+            boxShadow: `0 0 8px ${color}66`,
+          }} />
+          <div style={{
+            position: 'absolute',
+            top: '50%', left: `${pct}%`,
+            transform: 'translate(-50%, -50%)',
+            width: '22px', height: '22px',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, white 20%, ${color} 70%)`,
+            boxShadow: `0 0 10px ${color}, 0 0 20px ${color}55`,
+            border: '2px solid rgba(255,255,255,0.4)',
+            cursor: 'ew-resize',
+          }} />
+        </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.48rem', color: 'rgba(255,255,255,0.18)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.48rem', color: 'rgba(255,255,255,0.25)' }}>
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
@@ -153,7 +159,6 @@ export default function PowerCoreGame({ onWin, onFail }) {
   const [matchPct, setMatchPct] = useState(0);
   const [lockTime, setLockTime] = useState(0);
   const [freq, setFreq] = useState(INIT_FREQ);
-  const [phase, setPhase] = useState(INIT_PHASE);
   const [amp, setAmp] = useState(INIT_AMP);
 
   const G = useRef({
@@ -163,7 +168,7 @@ export default function PowerCoreGame({ onWin, onFail }) {
     lastTime: null,
     status: 'playing',
     freq: INIT_FREQ,
-    phase: INIT_PHASE,
+    phase: 0,
     amp: INIT_AMP,
   });
 
@@ -373,13 +378,12 @@ export default function PowerCoreGame({ onWin, onFail }) {
 
   // ── Slider handlers — update ref immediately, state for display ───────────
   const handleFreq = useCallback((v) => { setFreq(v); G.current.freq = v; }, []);
-  const handlePhase = useCallback((v) => { setPhase(v); G.current.phase = v; }, []);
   const handleAmp = useCallback((v) => { setAmp(v); G.current.amp = v; }, []);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const locked = matchPct >= MATCH_THRESHOLD;
   const lockPct = Math.min(100, (lockTime / LOCK_REQUIRED) * 100);
-  const timeWarn = timeLeft < 12;
+  const timeWarn = timeLeft < 10;
   const matchColor = locked ? '#00d4ff' : matchPct >= 60 ? '#00ffaa' : '#a855f7';
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -434,8 +438,30 @@ export default function PowerCoreGame({ onWin, onFail }) {
             {Math.max(0, timeLeft).toFixed(1)}<span style={{ fontSize: '1rem', opacity: 0.5 }}>s</span>
           </div>
           <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '0.1rem' }}>
-            REACTOR WINDOW
+            REACTOR WINDOW (50s)
           </div>
+        </div>
+      </div>
+
+      {/* ── Oscilloscope Waveform Legend ── */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: '0.68rem',
+        marginBottom: '0.45rem',
+        padding: '0 0.25rem',
+        fontFamily: "'Rajdhani', sans-serif",
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ color: '#00ffaa', fontWeight: 900 }}>―</span>
+          <span style={{ color: '#00ffaa', fontWeight: 600 }}>Target Signal</span>
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.62rem' }}>({TGT_FREQ.toFixed(2)} Hz)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ color: '#00d4ff', fontWeight: 900 }}>┄</span>
+          <span style={{ color: '#00d4ff', fontWeight: 600 }}>Your Waveform</span>
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.62rem' }}>(Live)</span>
         </div>
       </div>
 
@@ -471,7 +497,7 @@ export default function PowerCoreGame({ onWin, onFail }) {
             fontWeight: 700,
             animation: 'pulse-success 1s infinite',
           }}>
-            ⚡ FREQUENCY LOCK
+            ⚡ RESONANCE LOCKED
           </div>
         )}
       </div>
@@ -525,8 +551,8 @@ export default function PowerCoreGame({ onWin, onFail }) {
         </div>
       </div>
 
-      {/* ── Three Sliders ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.65rem', marginBottom: '1rem' }}>
+      {/* ── Two Sliders: Frequency & Amplitude ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginBottom: '1rem' }}>
         <TechSlider
           id="slider-freq"
           label="Frequency"
@@ -538,18 +564,6 @@ export default function PowerCoreGame({ onWin, onFail }) {
           color="#00ffaa"
           subLabel={`TARGET: ${TGT_FREQ.toFixed(2)} Hz`}
           onChange={handleFreq}
-        />
-        <TechSlider
-          id="slider-phase"
-          label="Phase Offset"
-          value={phase}
-          min={-180}
-          max={180}
-          step={1}
-          unit="°"
-          color="#00d4ff"
-          subLabel={`TARGET: ${TGT_PHASE}°`}
-          onChange={handlePhase}
         />
         <TechSlider
           id="slider-amp"
@@ -567,22 +581,23 @@ export default function PowerCoreGame({ onWin, onFail }) {
 
       {/* ── Hint strip ── */}
       <div style={{
-        padding: '0.6rem 1rem',
-        background: 'rgba(0,255,160,0.03)',
-        border: '1px solid rgba(0,255,160,0.1)',
+        padding: '0.65rem 0.9rem',
+        background: 'rgba(0,0,0,0.5)',
+        border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: '8px',
-        fontSize: '0.7rem',
-        color: 'rgba(255,255,255,0.35)',
+        fontSize: '0.72rem',
+        color: 'rgba(255,255,255,0.5)',
         letterSpacing: '0.5px',
         fontFamily: "'Rajdhani', sans-serif",
         display: 'flex',
-        gap: '1.5rem',
-        justifyContent: 'center',
+        gap: '0.75rem',
+        justifyContent: 'space-around',
         flexWrap: 'wrap',
+        textAlign: 'center',
       }}>
-        <span><span style={{ color: '#00ffaa' }}>FREQ</span> — compresses/stretches the wave</span>
-        <span><span style={{ color: '#00d4ff' }}>PHASE</span> — shifts it left or right</span>
-        <span><span style={{ color: '#a855f7' }}>AMP</span> — changes the height</span>
+        <span><strong style={{ color: '#00ffaa' }}>FREQ:</strong> Set wave cycles ({TGT_FREQ.toFixed(2)} Hz)</span>
+        <span><strong style={{ color: '#a855f7' }}>AMP:</strong> Set wave height ({TGT_AMP.toFixed(2)}×)</span>
+        <span><strong style={{ color: '#00d4ff' }}>PHASE:</strong> Auto-Locked (0°) ✓</span>
       </div>
     </div>
   );

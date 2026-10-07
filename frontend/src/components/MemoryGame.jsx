@@ -37,6 +37,33 @@ export default function MemoryGame({ gridSize = 4, onComplete, onResetClick }) {
   }, [gridSize]);
 
   const initGame = () => {
+    if (gridSize === 5) {
+      const pairCount = 12; // 12 pairs = 24 cards + 1 empty center = 25 cells
+      const selected = ALL_SYMBOLS.slice(0, pairCount);
+
+      const shuffled = [...selected, ...selected]
+        .sort(() => Math.random() - 0.5)
+        .map((item, idx) => ({ id: idx, ...item }));
+
+      const emptyCenter = {
+        id: 'empty-center',
+        isEmpty: true,
+      };
+
+      const deck = [
+        ...shuffled.slice(0, 12),
+        emptyCenter,
+        ...shuffled.slice(12),
+      ];
+
+      setCards(deck);
+      setFlippedIndices([]);
+      setMatchedIndices([]);
+      setLocked(false);
+      setIsDone(false);
+      return;
+    }
+
     const pairCount = (gridSize * gridSize) / 2;
     const selected = ALL_SYMBOLS.slice(0, pairCount);
 
@@ -53,6 +80,7 @@ export default function MemoryGame({ gridSize = 4, onComplete, onResetClick }) {
 
   const handleCardClick = (index) => {
     if (locked) return;
+    if (cards[index]?.isEmpty) return;
     if (flippedIndices.includes(index) || matchedIndices.includes(index)) return;
 
     const newFlipped = [...flippedIndices, index];
@@ -67,7 +95,8 @@ export default function MemoryGame({ gridSize = 4, onComplete, onResetClick }) {
         setMatchedIndices(newMatched);
         setFlippedIndices([]);
         setLocked(false);
-        if (newMatched.length === cards.length) {
+        const playableCardsCount = cards.filter(c => !c.isEmpty).length;
+        if (newMatched.length === playableCardsCount) {
           setIsDone(true);
           if (onComplete) setTimeout(onComplete, 500);
         }
@@ -85,21 +114,44 @@ export default function MemoryGame({ gridSize = 4, onComplete, onResetClick }) {
     if (onResetClick) onResetClick();
   };
 
-  const isSmall = gridSize === 6;
+  const isSmall = gridSize >= 5;
+  const playablePairsCount = cards.filter(c => !c.isEmpty).length / 2;
 
   return (
     <div className="memory-game-container">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.45rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+        <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--silver)' }}>
+          Pairs Matched:
+        </span>
+        <span style={{ color: '#FBBF24', fontWeight: 700, fontFamily: 'monospace', fontSize: '1rem' }}>
+          {matchedIndices.length / 2} / {playablePairsCount || (gridSize === 5 ? 12 : 8)}
+        </span>
+      </div>
+
       <div
         className={`memory-grid fade-in grid-${gridSize}`}
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-          gap: isSmall ? '0.3rem' : '0.5rem',
-          maxWidth: gridSize === 4 ? '360px' : '520px',
+          gap: isSmall ? 'clamp(3px, 1.2vw, 6px)' : 'clamp(5px, 2vw, 10px)',
+          maxWidth: gridSize === 4 ? '360px' : '460px',
+          width: '100%',
+          boxSizing: 'border-box',
           margin: '0 auto',
         }}
       >
         {cards.map((card, idx) => {
+          if (card.isEmpty) {
+            return (
+              <div
+                key="empty-center"
+                className="memory-card empty-card"
+                style={{ visibility: 'hidden', pointerEvents: 'none' }}
+                aria-hidden="true"
+              />
+            );
+          }
+
           const isFlipped = flippedIndices.includes(idx) || matchedIndices.includes(idx);
           const isMatched = matchedIndices.includes(idx);
 
@@ -127,7 +179,7 @@ export default function MemoryGame({ gridSize = 4, onComplete, onResetClick }) {
                     justifyContent: 'center',
                   }}
                 >
-                  <span style={{ fontSize: isSmall ? '1.4rem' : '2rem', lineHeight: 1 }}>
+                  <span style={{ fontSize: isSmall ? 'clamp(1rem, 3.8vw, 1.35rem)' : 'clamp(1.4rem, 5vw, 2rem)', lineHeight: 1 }}>
                     {card.symbol}
                   </span>
                 </div>

@@ -151,18 +151,39 @@ export default function PathfinderGame({ rows, cols, src, dest, onComplete, onRe
 
   if (!gridData) return null;
 
+  const currentEnergy = userPath.slice(1).reduce((sum, p) => sum + (gridData?.grid[p.r]?.[p.c]?.weight || 0), 0);
+
   return (
-    <div className="pathfinder-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-      {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1rem', fontSize: '0.8rem', width: '100%' }}>{errorMsg}</div>}
+    <div className="pathfinder-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '0.5rem 0' }}>
+      {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1rem', fontSize: '0.85rem', width: '100%', maxWidth: '440px' }}>{errorMsg}</div>}
       
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--silver)' }}>
+            Route Energy:
+          </span>
+          <span style={{ color: '#60C8F8', fontWeight: 700, fontFamily: 'monospace', fontSize: '1rem' }}>
+            {currentEnergy}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--silver)' }}>
+            Steps:
+          </span>
+          <span style={{ color: '#FBBF24', fontWeight: 700, fontFamily: 'monospace', fontSize: '1rem' }}>
+            {userPath.length - 1}
+          </span>
+        </div>
+      </div>
+
       <div 
         className="pathfinder-grid fade-in" 
         style={{ 
           display: 'grid', 
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gap: '0.3rem',
+          gap: cols === 7 ? 'clamp(2px, 1vw, 4px)' : 'clamp(4px, 1.5vw, 6px)',
           width: '100%',
-          maxWidth: '460px',
+          maxWidth: cols === 7 ? '440px' : '360px',
           margin: '0 auto'
         }}
       >
@@ -192,7 +213,11 @@ export default function PathfinderGame({ rows, cols, src, dest, onComplete, onRe
         ))}
       </div>
 
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+      <p style={{ fontSize: '0.78rem', color: 'var(--silver)', opacity: 0.7, marginTop: '0.75rem', textAlign: 'center' }}>
+        💡 Tap an adjacent cell to advance. Tap the previous cell to backtrack.
+      </p>
+
+      <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
         <button 
           className="btn btn-ghost btn-sm" 
           onClick={handleReset}

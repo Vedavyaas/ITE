@@ -55,18 +55,112 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'intro') {
     return (
-      <div className="card fade-in" style={{ padding: '2rem', textAlign: 'center', background: 'linear-gradient(180deg, rgba(10,18,30,1) 0%, rgba(0,20,40,0.9) 100%)', border: '1px solid rgba(168,85,247,0.15)' }}>
-        <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: '#a855f7', marginBottom: '1rem', letterSpacing: '2px' }}>
-          Stark Industries: Arc Reactor Lab
+      <div className="card fade-in" style={{
+        padding: 'clamp(1.25rem, 4vw, 2.25rem)',
+        textAlign: 'center',
+        background: 'linear-gradient(180deg, rgba(12,18,32,0.95) 0%, rgba(8,12,24,0.95) 100%)',
+        border: '1px solid rgba(168,85,247,0.22)',
+        maxWidth: '580px',
+        margin: '0 auto',
+      }}>
+        <h2 style={{
+          fontFamily: "'Rajdhani', sans-serif",
+          fontSize: 'clamp(1.35rem, 4.5vw, 1.75rem)',
+          color: '#a855f7',
+          marginBottom: '0.25rem',
+          letterSpacing: '2px',
+          fontWeight: 700,
+        }}>
+          Arc Reactor Calibration
         </h2>
-        <p style={{ color: 'var(--silver)', marginBottom: '1rem', lineHeight: '1.6' }}>
-          The Power Stone has overloaded Tony Stark's Arc Reactor, throwing its harmonic field into chaos. The reactor's waveform no longer matches the target resonance signature — and without a lock, it will destabilise.
+        <div style={{
+          fontSize: '0.65rem',
+          color: 'rgba(168,85,247,0.7)',
+          letterSpacing: '2px',
+          marginBottom: '1rem',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+        }}>
+          Harmonic Resonance Alignment
+        </div>
+
+        <p style={{
+          color: 'var(--silver)',
+          fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+          lineHeight: '1.5',
+          marginBottom: '1.25rem',
+        }}>
+          Adjust the Frequency and Amplitude sliders until your live waveform matches the target resonance signature.
         </p>
-        <p style={{ color: '#c084fc', marginBottom: '2rem', fontStyle: 'italic', fontSize: '1rem' }}>
-          Use the three sliders — <strong style={{ color: '#fff' }}>Frequency</strong>, <strong style={{ color: '#fff' }}>Phase</strong>, and <strong style={{ color: '#fff' }}>Amplitude</strong> — to tune your waveform until it overlaps the target signal. Hold above 88% match for 3 seconds to achieve resonance lock.
-        </p>
-        <button className="btn btn-primary" style={{ background: 'rgba(168,85,247,0.15)', borderColor: '#a855f7', color: '#a855f7' }} onClick={handleStartCountdown}>
-          Initialize Calibration
+
+        {/* 3 Step Instruction Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '0.75rem',
+          marginBottom: '1.25rem',
+          textAlign: 'left',
+        }}>
+          <div style={{
+            background: 'rgba(0,255,170,0.05)',
+            border: '1px solid rgba(0,255,170,0.2)',
+            borderRadius: '8px',
+            padding: '0.75rem',
+          }}>
+            <div style={{ fontSize: '0.62rem', color: '#00ffaa', letterSpacing: '1px', fontWeight: 700, marginBottom: '0.25rem' }}>
+              1. TUNE SLIDERS
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--silver)', lineHeight: '1.4' }}>
+              Adjust <strong style={{ color: '#fff' }}>Frequency</strong> (cycles) and <strong style={{ color: '#fff' }}>Amplitude</strong> (height).
+            </div>
+          </div>
+
+          <div style={{
+            background: 'rgba(0,212,255,0.05)',
+            border: '1px solid rgba(0,212,255,0.2)',
+            borderRadius: '8px',
+            padding: '0.75rem',
+          }}>
+            <div style={{ fontSize: '0.62rem', color: '#00d4ff', letterSpacing: '1px', fontWeight: 700, marginBottom: '0.25rem' }}>
+              2. REACH ≥ 88%
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--silver)', lineHeight: '1.4' }}>
+              Align the curves until signal correlation hits <strong style={{ color: '#fff' }}>88% or higher</strong>.
+            </div>
+          </div>
+
+          <div style={{
+            background: 'rgba(168,85,247,0.05)',
+            border: '1px solid rgba(168,85,247,0.2)',
+            borderRadius: '8px',
+            padding: '0.75rem',
+          }}>
+            <div style={{ fontSize: '0.62rem', color: '#a855f7', letterSpacing: '1px', fontWeight: 700, marginBottom: '0.25rem' }}>
+              3. HOLD 3 SECONDS
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--silver)', lineHeight: '1.4' }}>
+              Hold steady for <strong style={{ color: '#fff' }}>3 seconds</strong> before the 50s timer expires.
+            </div>
+          </div>
+        </div>
+
+        <button
+          className="btn btn-primary"
+          style={{
+            width: '100%',
+            maxWidth: '320px',
+            margin: '0 auto',
+            display: 'block',
+            background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
+            border: 'none',
+            color: '#fff',
+            fontSize: '0.95rem',
+            letterSpacing: '2px',
+            boxShadow: '0 4px 16px rgba(168,85,247,0.35)',
+          }}
+          onClick={handleStartCountdown}
+        >
+          ⚡ Begin Calibration
         </button>
       </div>
     );
@@ -74,21 +168,41 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'countdown') {
     return (
-      <div className="card fade-in" style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(0,10,25,0.9)' }}>
-        <div style={{ fontSize: '0.7rem', color: '#a855f7', letterSpacing: '4px', marginBottom: '1rem', fontFamily: "'Rajdhani', sans-serif" }}>REACTOR BOOT SEQUENCE</div>
-        <h1 style={{ 
-          fontSize: '6rem', 
-          fontFamily: "'Rajdhani', sans-serif", 
+      <div className="card fade-in" style={{
+        padding: 'clamp(2.5rem, 8vw, 4rem) 1.5rem',
+        textAlign: 'center',
+        background: 'rgba(0,10,25,0.92)',
+        maxWidth: '520px',
+        margin: '0 auto',
+        border: '1px solid rgba(168,85,247,0.2)',
+      }}>
+        <div style={{
+          fontSize: '0.65rem',
           color: '#a855f7',
-          margin: 0,
-          animation: 'pulse-success 1s infinite'
+          letterSpacing: '3px',
+          marginBottom: '0.85rem',
+          fontWeight: 700,
+        }}>
+          REACTOR INITIALIZING
+        </div>
+        <h1 style={{
+          fontSize: 'clamp(4.5rem, 16vw, 6.5rem)',
+          fontFamily: "'Rajdhani', sans-serif",
+          color: '#a855f7',
+          margin: '0 0 1rem 0',
+          lineHeight: 1,
+          animation: 'pulse-success 1s infinite',
         }}>
           {countdown}
         </h1>
-        <p style={{ color: 'var(--silver)', fontSize: '1rem', marginTop: '1.5rem' }}>
-          Tune <span style={{ color: '#c084fc', fontWeight: 700 }}>Frequency</span>,&nbsp;
-          <span style={{ color: '#c084fc', fontWeight: 700 }}>Phase</span> and&nbsp;
-          <span style={{ color: '#c084fc', fontWeight: 700 }}>Amplitude</span> to match the target waveform.
+        <p style={{
+          color: 'var(--silver)',
+          fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+          maxWidth: '380px',
+          margin: '0 auto',
+          lineHeight: '1.4',
+        }}>
+          Get ready to tune <span style={{ color: '#00ffaa', fontWeight: 700 }}>Frequency</span> and <span style={{ color: '#a855f7', fontWeight: 700 }}>Amplitude</span>.
         </p>
       </div>
     );

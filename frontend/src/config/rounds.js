@@ -23,7 +23,7 @@ export const ROUNDS = [
     glow:  'rgba(234,179,8,0.55)',
     emoji: '💛',
     title: 'The Mind Stone',
-    brief: 'The Mind Stone grants its wielder absolute mastery over intellect and willpower. Your first challenge tests the sharpest minds in your squad. Solve the puzzle presented to you and claim this stone.',
+    brief: 'The Mind Stone grants its wielder absolute mastery over intellect and willpower. Your first challenge tests the sharpest minds in your squad. Flip tiles to match all identical symbol pairs across two memory grids (4x4, then 5x5) to claim this stone.',
     hint:  null,
   },
   {
@@ -33,8 +33,8 @@ export const ROUNDS = [
     glow:  'rgba(59,130,246,0.55)',
     emoji: '💙',
     title: 'The Space Stone',
-    brief: 'The Space Stone — known to many as the Tesseract — allows its wielder to traverse any point in the universe instantly. Navigate through the spatial challenge that awaits you and seize this stone.',
-    hint:  null,
+    brief: 'The Space Stone — known as the Tesseract — governs cosmic coordinates. Tap adjacent cells to chart a path from Source (S) to Destination (D) with the absolute lowest total energy sum across two navigation grids (5x5, then 7x7) to secure the Stone.',
+    hint:  'Choose each step carefully to avoid high-cost nodes. Tap the previous cell to backtrack/undo.',
   },
   {
     id:    'THIRD',
@@ -43,8 +43,8 @@ export const ROUNDS = [
     glow:  'rgba(239,68,68,0.55)',
     emoji: '❤️',
     title: 'The Reality Stone',
-    brief: 'The Reality Stone warps what is real — and it has done exactly that to its own unlock code. S.H.I.E.L.D. intercepted an Aether-encrypted payload, but the data is disguised behind a mathematical lock. Your squad must break the cipher by solving a series of equations. Only a team that understands the mathematics of reality can unlock this Stone.',
-    hint:  'Divide and conquer. Each equation yields a single digit of the unlock code.',
+    brief: 'Solve the 4 equations to uncover each digit of the cipher. Enter the 4-digit code in order to claim the Reality Stone.',
+    hint:  'Equations 01 through 04 yield digits 1 through 4.',
   },
   {
     id:    'FOURTH',
@@ -53,8 +53,8 @@ export const ROUNDS = [
     glow:  'rgba(168,85,247,0.55)',
     emoji: '💜',
     title: 'The Power Stone',
-    brief: 'The Power Stone has overloaded Tony Stark\'s Arc Reactor, throwing its harmonic field into chaos. To harness its energy without triggering a catastrophic feedback loop, your squad must manually recalibrate the reactor\'s signal parameters — frequency, phase, and amplitude — until your waveform locks onto the target resonance signature.',
-    hint:  'Precision over speed. Tune all three parameters together — one wrong value offsets the others.',
+    brief: 'Calibrate the Arc Reactor by matching your waveform to the target signal. Adjust Frequency and Amplitude until you reach ≥ 88% correlation, then hold for 3 seconds.',
+    hint:  'Phase is auto-synchronized. Tune Frequency to match wave cycles, then Amplitude to match wave height.',
   },
   {
     id:    'FIFTH',
@@ -63,8 +63,8 @@ export const ROUNDS = [
     glow:  'rgba(34,197,94,0.55)',
     emoji: '💚',
     title: 'The Time Stone',
-    brief: 'The Time Stone holds mastery over the past, present, and future. To wield it, you must prove you can navigate the timestream without breaking it. Watch the timeline closely, and repeat the exact sequence of events before the time loop collapses.',
-    hint:  'If you make a mistake, time resets. "Dormammu, I\'ve come to bargain."',
+    brief: 'Memorize and repeat the flashing sequence of Infinity Stones. Each turn adds another step — repeat 12 consecutive steps without a mistake to claim the final stone.',
+    hint:  'Watch the sequence carefully before tapping. A single wrong tap resets the loop back to step 1.',
   }
 ];
 

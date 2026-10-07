@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import Toast from '../components/Toast.jsx';
-import { getStatistics, createTeam, deleteTeam, decodeToken, forceLogoutTeam } from '../api/client';
+import { getStatistics, createTeam, deleteTeam, decodeToken, forceLogoutTeam, forceLogoutAllTeams } from '../api/client';
 
 const ROUNDS = ['YET_TO_START', 'FIRST', 'SECOND', 'THIRD'];
 const SUBROUNDS = ['YET_TO_START', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT'];
@@ -24,9 +24,21 @@ function formatDuration(ms) {
   const s = totalSeconds % 60;
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
+
+function formatStartTime(st) {
+  if (!st) return '—';
+  try {
+    const d = new Date(st);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return '—';
+  }
+}
 // ── Leaderboard panel ──────────────────────────────────────────────
 function LeaderboardPanel() {
   const [stats, setStats]       = useState([]);
+  const [search, setSearch]     = useState('');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
@@ -45,12 +57,22 @@ function LeaderboardPanel() {
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
+  const filteredStats = stats.filter(s => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const teamMatches = s.teamName?.toLowerCase().includes(q);
+    const memberMatches = Array.isArray(s.teamMembers) && s.teamMembers.some(m => m?.toLowerCase().includes(q));
+    const roundMatches = roundLabel(s.roundProgression)?.toLowerCase().includes(q);
+    return teamMatches || memberMatches || roundMatches;
+  });
+
   const downloadCSV = () => {
     if (!stats || stats.length === 0) return;
     
     const headers = ["Rank", "Team Name", "Round", "Time Taken"];
-    const rows = stats.map((s, i) => {
-      const rank = i + 1;
+    const exportList = search.trim() ? filteredStats : stats;
+    const rows = exportList.map((s) => {
+      const rank = stats.findIndex(item => item.teamName === s.teamName) + 1;
       const team = s.teamName.replace(/,/g, ''); // basic escaping
       const round = roundLabel(s.roundProgression);
       const time = formatDuration(s.timeTaken);
@@ -62,7 +84,7 @@ function LeaderboardPanel() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "leaderboard.csv");
+    link.setAttribute("download", search.trim() ? "leaderboard-filtered.csv" : "leaderboard.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -96,11 +118,34 @@ function LeaderboardPanel() {
       </div>
 
       <div className="card fade-in fade-in-delay-2">
-        <div className="refresh-row">
-          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.6 }}>
-            Standings
-          </span>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="refresh-row" style={{ flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+          <div className="admin-search-wrapper">
+            <span className="admin-search-icon">🔍</span>
+            <input
+              type="text"
+              className="admin-search-input"
+              placeholder="Search squad, member, or round..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                className="admin-search-clear"
+                onClick={() => setSearch('')}
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {search && (
+              <span className="admin-search-meta">
+                Showing {filteredStats.length} of {stats.length}
+              </span>
+            )}
             <button className="btn btn-ghost btn-sm" onClick={downloadCSV} disabled={loading || stats.length === 0}>
               ⬇ Download CSV
             </button>
@@ -119,7 +164,21 @@ function LeaderboardPanel() {
           </div>
         )}
 
-        {stats.length > 0 && (
+        {!loading && stats.length > 0 && filteredStats.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon">🔍</div>
+            <div className="empty-state-text">No squads match "{search}"</div>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ marginTop: '0.75rem' }}
+              onClick={() => setSearch('')}
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
+
+        {filteredStats.length > 0 && (
           <div style={{ overflowX: 'auto' }}>
             <table className="leaderboard-table">
               <thead>
@@ -131,12 +190,13 @@ function LeaderboardPanel() {
                 </tr>
               </thead>
               <tbody>
-                {stats.map((s, i) => {
+                {filteredStats.map((s) => {
+                  const originalRank = stats.findIndex(item => item.teamName === s.teamName) + 1;
                   const membersList = Array.isArray(s.teamMembers) ? s.teamMembers : [];
                   return (
                     <tr key={s.teamName}>
-                      <td className={`rank-cell rank-${i + 1}`}>
-                        {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                      <td className={`rank-cell rank-${originalRank}`}>
+                        {originalRank === 1 ? '👑' : originalRank === 2 ? '🥈' : originalRank === 3 ? '🥉' : `#${originalRank}`}
                       </td>
                       <td>
                         <div style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.95rem' }}>
@@ -173,27 +233,40 @@ function LeaderboardPanel() {
 // ── Create Team panel ──────────────────────────────────────────────
 function CreateTeamPanel({ onToast }) {
   const [teamName, setTeamName] = useState('');
-  const [password, setPassword] = useState('');
-  const [memberCount, setMemberCount] = useState(2);
-  const [members, setMembers]   = useState(['', '']);
+  const [password, setPassword] = useState('123');
+  const [members, setMembers]   = useState(['']);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   function setMember(index, value) {
-    setMembers(prev => prev.map((m, i) => i === index ? value : m));
+    setMembers(prev => prev.map((m, i) => (i === index ? value : m)));
+  }
+
+  function addMember() {
+    setMembers(prev => [...prev, '']);
+  }
+
+  function removeMember(index) {
+    if (members.length > 1) {
+      setMembers(prev => prev.filter((_, i) => i !== index));
+    }
   }
 
   async function handleCreate(e) {
     e.preventDefault();
     setError('');
 
-    // Client-side duplicate check within the form
-    const activeMembers = members.slice(0, memberCount);
-    const trimmed = activeMembers.map(m => m.trim());
-    const unique = new Set(trimmed.filter(Boolean));
-    if (unique.size !== memberCount) {
-      setError(`All ${memberCount} member names must be filled in and unique.`);
+    // Client-side duplicate and empty checks
+    const trimmed = members.map(m => m.trim());
+    if (trimmed.length < 1 || trimmed.some(m => !m)) {
+      setError('Please fill in all member names or remove empty fields.');
+      return;
+    }
+
+    const unique = new Set(trimmed);
+    if (unique.size !== trimmed.length) {
+      setError('Team member names must be unique — duplicate names found.');
       return;
     }
 
@@ -202,8 +275,8 @@ function CreateTeamPanel({ onToast }) {
       await createTeam(teamName.trim(), password, trimmed);
       onToast('Team created successfully!', 'success');
       setTeamName('');
-      setPassword('');
-      setMembers(['', '']);
+      setPassword('123');
+      setMembers(['']);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -232,12 +305,12 @@ function CreateTeamPanel({ onToast }) {
           />
         </div>
         <div className="input-group">
-          <label htmlFor="create-team-password">Password</label>
+          <label htmlFor="create-team-password">Password (Default: 123)</label>
           <div style={{ position: 'relative' }}>
             <input
               id="create-team-password"
               type={showPassword ? "text" : "password"}
-              placeholder="Set their access key..."
+              placeholder="Access key (default: 123)..."
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
@@ -265,39 +338,73 @@ function CreateTeamPanel({ onToast }) {
           </div>
         </div>
 
-        <div style={{ marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.7 }}>
-            Team Members
-          </label>
-          <select 
-            value={memberCount} 
-            onChange={(e) => setMemberCount(parseInt(e.target.value))}
-            style={{ 
-              padding: '0.2rem 0.5rem', 
-              fontSize: '0.8rem', 
-              background: 'rgba(255,255,255,0.05)', 
-              color: 'var(--white)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '4px'
-            }}
-          >
-            <option value={1}>1 Member</option>
-            <option value={2}>2 Members</option>
-          </select>
-        </div>
-        
-        {members.slice(0, memberCount).map((m, i) => (
-          <div className="input-group" key={i} style={{ marginBottom: '0.6rem' }}>
-            <input
-              id={`create-member-${i + 1}`}
-              type="text"
-              placeholder={`Member ${i + 1} name...`}
-              value={m}
-              onChange={e => setMember(i, e.target.value)}
-              required
-            />
+        <div style={{ marginBottom: '0.8rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+            <label style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.7 }}>
+              Team Members ({members.length})
+            </label>
+            <button
+              type="button"
+              id="btn-add-member"
+              onClick={addMember}
+              className="btn btn-ghost btn-sm"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                padding: '0.25rem 0.65rem',
+                fontSize: '0.75rem',
+                minHeight: '30px',
+                color: 'var(--arc-blue, #60C8F8)',
+                borderColor: 'rgba(96, 200, 248, 0.3)',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>+</span> Add Member
+            </button>
           </div>
-        ))}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {members.map((m, i) => (
+              <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div className="input-group" style={{ marginBottom: 0, flex: 1 }}>
+                  <input
+                    id={`create-member-${i + 1}`}
+                    type="text"
+                    placeholder={`Member ${i + 1} name...`}
+                    value={m}
+                    onChange={e => setMember(i, e.target.value)}
+                    required
+                  />
+                </div>
+                {members.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeMember(i)}
+                    className="btn btn-ghost"
+                    title={`Remove Member ${i + 1}`}
+                    aria-label={`Remove Member ${i + 1}`}
+                    style={{
+                      padding: '0',
+                      width: '42px',
+                      height: '42px',
+                      minHeight: '42px',
+                      color: '#ef4444',
+                      borderColor: 'rgba(239,68,68,0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
 
         <button
           id="btn-create-team"
@@ -315,10 +422,19 @@ function CreateTeamPanel({ onToast }) {
 
 // ── Delete Team panel ──────────────────────────────────────────────
 function DeleteTeamPanel({ onToast, teams }) {
-  const [teamId, setTeamId]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
-  const [confirm, setConfirm] = useState(false);
+  const [teamId, setTeamId]         = useState('');
+  const [filterText, setFilterText] = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
+  const [confirm, setConfirm]       = useState(false);
+
+  const filteredTeams = teams.filter(t => {
+    if (!filterText.trim()) return true;
+    const q = filterText.trim().toLowerCase();
+    const nameMatches = t.teamName?.toLowerCase().includes(q);
+    const memberMatches = Array.isArray(t.teamMembers) && t.teamMembers.some(m => m?.toLowerCase().includes(q));
+    return nameMatches || memberMatches;
+  });
 
   async function handleDelete(e) {
     e.preventDefault();
@@ -329,6 +445,7 @@ function DeleteTeamPanel({ onToast, teams }) {
       await deleteTeam(teamId.trim());
       onToast('Team banished successfully!', 'success');
       setTeamId('');
+      setFilterText('');
       setConfirm(false);
     } catch (e) {
       setError(e.message);
@@ -348,18 +465,61 @@ function DeleteTeamPanel({ onToast, teams }) {
 
       <form onSubmit={handleDelete}>
         <div className="input-group">
-          <label htmlFor="delete-team-id">Select Team</label>
+          <label htmlFor="delete-team-id">Select Squad</label>
+
+          {teams.length > 0 && (
+            <div className="admin-search-wrapper" style={{ maxWidth: '100%', marginBottom: '0.55rem' }}>
+              <span className="admin-search-icon">🔍</span>
+              <input
+                id="search-delete-squad"
+                type="text"
+                className="admin-search-input"
+                placeholder="Search squad or member to remove..."
+                value={filterText}
+                onChange={e => setFilterText(e.target.value)}
+              />
+              {filterText && (
+                <button
+                  type="button"
+                  className="admin-search-clear"
+                  onClick={() => setFilterText('')}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+
           {teams.length > 0 ? (
-            <select id="delete-team-id" value={teamId}
-              onChange={e => { setTeamId(e.target.value); setConfirm(false); }} required>
-              <option value="">— Select a squad —</option>
-              {teams.map(t => (
-                <option key={t.teamName} value={t.teamName}>{t.teamName}</option>
-              ))}
-            </select>
+            filteredTeams.length > 0 ? (
+              <select
+                id="delete-team-id"
+                value={teamId}
+                onChange={e => { setTeamId(e.target.value); setConfirm(false); }}
+                required
+              >
+                <option value="">— Select squad {filterText ? `(${filteredTeams.length} matches)` : ''} —</option>
+                {filteredTeams.map(t => (
+                  <option key={t.teamName} value={t.teamName}>
+                    {t.teamName} {Array.isArray(t.teamMembers) && t.teamMembers.length > 0 ? `(${t.teamMembers.join(', ')})` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div style={{ fontSize: '0.8rem', color: '#ff7070', padding: '0.4rem 0' }}>
+                No squads match "{filterText}". <button type="button" onClick={() => setFilterText('')} style={{ background: 'none', border: 'none', color: '#60C8F8', cursor: 'pointer', textDecoration: 'underline' }}>Show all</button>
+              </div>
+            )
           ) : (
-            <input id="delete-team-id" type="text" placeholder="Squad name..."
-              value={teamId} onChange={e => { setTeamId(e.target.value); setConfirm(false); }} required />
+            <input
+              id="delete-team-id"
+              type="text"
+              placeholder="Squad name..."
+              value={teamId}
+              onChange={e => { setTeamId(e.target.value); setConfirm(false); }}
+              required
+            />
           )}
         </div>
 
@@ -384,7 +544,7 @@ function DeleteTeamPanel({ onToast, teams }) {
 }
 
 // ── Manage Teams table ────────────────────────────────────────────
-function ManageTeamsTable({ teams, onToast }) {
+function ManageTeamsTable({ teams, allTeams, onToast }) {
   const [loadingId, setLoadingId] = useState(null);
 
   const handleForceLogout = async (teamName) => {
@@ -405,6 +565,7 @@ function ManageTeamsTable({ teams, onToast }) {
         <tr>
           <th>#</th>
           <th>Team</th>
+          <th>Start Time</th>
           <th>Round</th>
           <th>Sub-Round</th>
           <th>Members</th>
@@ -412,35 +573,43 @@ function ManageTeamsTable({ teams, onToast }) {
         </tr>
       </thead>
       <tbody>
-        {teams.map((t, i) => (
-          <tr key={t.teamName}>
-            <td className="rank-cell" style={{ color: 'var(--silver)' }}>#{i + 1}</td>
-            <td style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.92rem' }}>
-              {t.teamName}
-            </td>
-            <td>
-              <span className={`round-badge ${roundClass(t.roundProgression)}`}>
-                {roundLabel(t.roundProgression)}
-              </span>
-            </td>
-            <td style={{ color: 'var(--silver)', fontSize: '0.9rem' }}>
-              {t.subRound !== 'YET_TO_START' ? t.subRound : '—'}
-            </td>
-            <td style={{ color: 'var(--silver)', fontSize: '0.85rem' }}>
-              {Array.isArray(t.teamMembers) ? t.teamMembers.join(', ') : '—'}
-            </td>
-            <td>
-              <button 
-                className="btn btn-ghost btn-sm"
-                style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}
-                onClick={() => handleForceLogout(t.teamName)}
-                disabled={loadingId === t.teamName}
-              >
-                {loadingId === t.teamName ? '...' : 'Allow Login Again'}
-              </button>
-            </td>
-          </tr>
-        ))}
+        {teams.map((t, i) => {
+          const originalIndex = allTeams ? allTeams.findIndex(item => item.teamName === t.teamName) + 1 : i + 1;
+          return (
+            <tr key={t.teamName}>
+              <td className="rank-cell" style={{ color: 'var(--silver)' }}>#{originalIndex}</td>
+              <td style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.92rem' }}>
+                {t.teamName}
+              </td>
+              <td style={{ color: 'var(--silver)', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+                <span title={t.startTime ? new Date(t.startTime).toLocaleString() : ''}>
+                  {formatStartTime(t.startTime)}
+                </span>
+              </td>
+              <td>
+                <span className={`round-badge ${roundClass(t.roundProgression)}`}>
+                  {roundLabel(t.roundProgression)}
+                </span>
+              </td>
+              <td style={{ color: 'var(--silver)', fontSize: '0.9rem' }}>
+                {t.subRound !== 'YET_TO_START' ? t.subRound : '—'}
+              </td>
+              <td style={{ color: 'var(--silver)', fontSize: '0.85rem' }}>
+                {Array.isArray(t.teamMembers) ? t.teamMembers.join(', ') : '—'}
+              </td>
+              <td>
+                <button 
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}
+                  onClick={() => handleForceLogout(t.teamName)}
+                  disabled={loadingId === t.teamName}
+                >
+                  {loadingId === t.teamName ? '...' : 'Allow Login Again'}
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
@@ -448,16 +617,20 @@ function ManageTeamsTable({ teams, onToast }) {
 
 // ── Manage Teams panel ─────────────────────────────────────────────
 function ManageTeamsPanel({ onToast }) {
-  const [teams, setTeams]     = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [teams, setTeams]       = useState([]);
+  const [search, setSearch]     = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+
+  const [unlockingAll, setUnlockingAll] = useState(false);
+  const [confirmUnlockAll, setConfirmUnlockAll] = useState(false);
 
   const fetchTeams = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await getStatistics();
-      setTeams(data);
+      setTeams(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -472,6 +645,36 @@ function ManageTeamsPanel({ onToast }) {
     fetchTeams();
   }
 
+  const filteredTeams = teams.filter(t => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const nameMatches = t.teamName?.toLowerCase().includes(q);
+    const memberMatches = Array.isArray(t.teamMembers) && t.teamMembers.some(m => m?.toLowerCase().includes(q));
+    const roundMatches = roundLabel(t.roundProgression)?.toLowerCase().includes(q);
+    const subMatches = t.subRound?.toLowerCase().includes(q);
+    return nameMatches || memberMatches || roundMatches || subMatches;
+  });
+
+  const handleAllowLoginAll = async () => {
+    if (!confirmUnlockAll) {
+      setConfirmUnlockAll(true);
+      setTimeout(() => setConfirmUnlockAll(false), 5000);
+      return;
+    }
+
+    setConfirmUnlockAll(false);
+    setUnlockingAll(true);
+    try {
+      const msg = await forceLogoutAllTeams(teams);
+      onToast(msg || 'All teams unlocked successfully!', 'success');
+      fetchTeams();
+    } catch (err) {
+      onToast(`Failed to unlock all teams: ${err.message}`, 'error');
+    } finally {
+      setUnlockingAll(false);
+    }
+  };
+
   return (
     <div className="fade-in">
       <div className="section-header">
@@ -485,13 +688,48 @@ function ManageTeamsPanel({ onToast }) {
       </div>
 
       <div className="card fade-in fade-in-delay-2">
-        <div className="refresh-row">
-          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--silver)', opacity: 0.6 }}>
-            All Teams ({teams.length})
-          </span>
-          <button className="btn btn-ghost btn-sm" onClick={fetchTeams} disabled={loading}>
-            {loading ? '...' : '↻ Refresh'}
-          </button>
+        <div className="refresh-row" style={{ flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+          <div className="admin-search-wrapper">
+            <span className="admin-search-icon">🔍</span>
+            <input
+              type="text"
+              className="admin-search-input"
+              placeholder="Search team, member, round..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                className="admin-search-clear"
+                onClick={() => setSearch('')}
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {search && (
+              <span className="admin-search-meta">
+                Showing {filteredTeams.length} of {teams.length}
+              </span>
+            )}
+            <button
+              id="btn-allow-login-all"
+              className={`btn btn-sm ${confirmUnlockAll ? 'btn-danger' : 'btn-ghost'}`}
+              style={confirmUnlockAll ? {} : { color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.35)' }}
+              onClick={handleAllowLoginAll}
+              disabled={loading || unlockingAll || teams.length === 0}
+              title="Reset login status for all teams so anyone can log in again"
+            >
+              {unlockingAll ? 'Unlocking...' : confirmUnlockAll ? '⚠ Confirm Unlock All?' : '🔓 Allow Login All'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={fetchTeams} disabled={loading || unlockingAll}>
+              {loading ? '...' : '↻ Refresh'}
+            </button>
+          </div>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -503,9 +741,25 @@ function ManageTeamsPanel({ onToast }) {
           </div>
         )}
 
-        <div className="table-responsive">
-          <ManageTeamsTable teams={teams} onToast={handleToast} />
-        </div>
+        {!loading && teams.length > 0 && filteredTeams.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon">🔍</div>
+            <div className="empty-state-text">No squads match "{search}"</div>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ marginTop: '0.75rem' }}
+              onClick={() => setSearch('')}
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
+
+        {filteredTeams.length > 0 && (
+          <div className="table-responsive">
+            <ManageTeamsTable teams={filteredTeams} allTeams={teams} onToast={handleToast} />
+          </div>
+        )}
       </div>
     </div>
   );

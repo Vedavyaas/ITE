@@ -46,12 +46,12 @@ export default function RealityStoneRound({ onComplete, stoneColor, stoneGlow })
   }
 
   return (
-    <div className="card fade-in" style={{ padding: '2rem', background: 'rgba(20,5,5,0.8)' }}>
-      <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: '#ef4444', marginBottom: '0.5rem', textAlign: 'center', letterSpacing: '2px' }}>
-        Aether Cipher Intercept
+    <div className="card fade-in" style={{ padding: 'clamp(1rem, 3.5vw, 2rem)', background: 'rgba(20,5,5,0.85)', maxWidth: '560px', margin: '0 auto' }}>
+      <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 'clamp(1.25rem, 3.5vw, 1.55rem)', color: '#ef4444', marginBottom: '0.35rem', textAlign: 'center', letterSpacing: '2px' }}>
+        Aether Cipher
       </h2>
-      <p style={{ color: 'var(--silver)', fontSize: '0.85rem', marginBottom: '1.5rem', textAlign: 'center', lineHeight: '1.6' }}>
-        The Reality Stone masked its unlock code in an encrypted 4-byte payload. Decode the Aether cipher and enter the correct sequence to claim the Stone.
+      <p style={{ color: 'var(--silver)', fontSize: 'clamp(0.85rem, 2.5vw, 0.92rem)', marginBottom: '1.25rem', textAlign: 'center', lineHeight: '1.5' }}>
+        Solve each equation for its variable to find the 4-digit unlock code.
       </p>
 
       {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}

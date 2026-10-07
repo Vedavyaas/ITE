@@ -30,9 +30,11 @@ export default function Navbar({ role, teamName }) {
         )}
       </div>
 
-      <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
-        ↩ Exit
-      </button>
+      {role === 'ROLE_ADMIN' && (
+        <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
+          ↩ Exit
+        </button>
+      )}
     </nav>
   );
 }

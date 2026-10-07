@@ -116,15 +116,20 @@ export default function MindStoneRound({ onComplete, stoneColor, stoneGlow }) {
   }
 
   const isGridTwo = currentStage === 'two';
-  const gridSize = isGridTwo ? 6 : 4;
+  const gridSize = isGridTwo ? 5 : 4;
 
   return (
-    <div className="card fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-      <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', color: 'var(--white)', marginBottom: '0.5rem' }}>
-        Sector {isGridTwo ? 'B-Alpha (6x6)' : 'A-Prime (4x4)'}
+    <div className="card fade-in" style={{ padding: 'clamp(1rem, 3.5vw, 2rem)', textAlign: 'center' }}>
+      <div style={{ display: 'inline-block', padding: '0.2rem 0.75rem', borderRadius: '16px', background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)', color: '#fde047', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+        {isGridTwo ? 'Sub-Round 2 of 2' : 'Sub-Round 1 of 2'}
+      </div>
+      <h2 style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', color: 'var(--white)', marginBottom: '0.4rem' }}>
+        {isGridTwo ? 'Sector B-Alpha (5x5 Grid)' : 'Sector A-Prime (4x4 Grid)'}
       </h2>
-      <p style={{ color: 'var(--silver)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-        Match the anomalous energy signatures to stabilize the grid.
+      <p style={{ color: 'var(--silver)', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', maxWidth: '520px', margin: '0 auto 1.5rem auto', lineHeight: '1.5' }}>
+        {isGridTwo
+          ? 'Flip any two tiles at a time to reveal symbols. Match all 12 pairs in the 5x5 grid to secure the Mind Stone.'
+          : 'Flip any two tiles at a time to reveal symbols. Match all 8 identical pairs to stabilize this sector and unlock Sector B.'}
       </p>
 
       {errorMsg && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{errorMsg}</div>}

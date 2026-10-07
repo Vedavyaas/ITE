@@ -89,69 +89,132 @@ export default function TimeStoneGame({ onWin }) {
   }, []);
 
   return (
-    <div className="time-stone-container fade-in" style={{ padding: '1rem', maxWidth: '400px', margin: '0 auto', textAlign: 'center', width: '100%' }}>
-      <h3 style={{ color: 'var(--time)', fontFamily: "'Rajdhani', sans-serif", fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-        Observe and Repeat
+    <div className="time-stone-container fade-in" style={{ padding: '0.5rem', maxWidth: '420px', margin: '0 auto', textAlign: 'center', width: '100%' }}>
+      <h3 style={{ color: 'var(--time)', fontFamily: "'Rajdhani', sans-serif", fontSize: '1.4rem', marginBottom: '0.25rem', letterSpacing: '2px', fontWeight: 700 }}>
+        Temporal Resonance
       </h3>
+      <div style={{ fontSize: '0.65rem', color: 'rgba(34,197,94,0.7)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.75rem', fontWeight: 600 }}>
+        Pattern Recall Matrix
+      </div>
       
-      <div style={{ minHeight: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Live turn status */}
+      <div style={{ minHeight: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
         {dormammuMessage ? (
-          <div style={{ color: '#ef4444', fontStyle: 'italic', animation: 'shake 0.5s' }}>
-            {dormammuMessage}
+          <div style={{ color: '#ef4444', fontStyle: 'italic', fontWeight: 600, fontSize: '0.9rem', animation: 'shake 0.5s' }}>
+            ⚠ {dormammuMessage}
           </div>
         ) : (
-          <div style={{ color: 'var(--silver)' }}>
-            {sequence.length === 0 ? "Ready to begin?" : isPlaying ? "Watch the sequence..." : "Your turn!"}
+          <div style={{
+            color: isPlaying ? '#60a5fa' : sequence.length > 0 ? '#22c55e' : 'var(--silver)',
+            fontFamily: "'Rajdhani', sans-serif",
+            fontWeight: 700,
+            fontSize: '1rem',
+            letterSpacing: '1px',
+          }}>
+            {sequence.length === 0
+              ? 'Press "Start Time Loop" to begin'
+              : isPlaying
+                ? '⏳ Watch sequence closely...'
+                : `👉 Your turn: Tap stone ${playerStep + 1} of ${sequence.length}`}
           </div>
         )}
       </div>
 
+      {/* 6 Stone Pad Matrix */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: '1fr 1fr 1fr', 
-        gap: '1.5rem', 
-        marginBottom: '2rem',
-        padding: '1.5rem',
-        background: 'rgba(255,255,255,0.02)',
+        gap: 'clamp(0.85rem, 3vw, 1.25rem)', 
+        marginBottom: '1.25rem',
+        padding: 'clamp(1rem, 3.5vw, 1.5rem)',
+        background: 'rgba(0,0,0,0.4)',
         borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.05)',
+        border: '1px solid rgba(34,197,94,0.15)',
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {COLORS.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => handleButtonClick(c.id)}
-            disabled={sequence.length === 0 || isPlaying || !!dormammuMessage}
-            style={{
-              width: '100%',
-              aspectRatio: '1/1',
-              borderRadius: '50%',
-              border: `4px solid ${activeButton === c.id ? '#fff' : c.hex}`,
-              background: activeButton === c.id ? c.hex : 'transparent',
-              boxShadow: activeButton === c.id ? `0 0 25px ${c.hex}` : 'none',
-              transition: 'all 0.15s ease',
-              cursor: (sequence.length === 0 || isPlaying || !!dormammuMessage) ? 'default' : 'pointer',
-              opacity: activeButton === c.id ? 1 : 0.4,
-              padding: 0
-            }}
-          />
-        ))}
+        {COLORS.map((c) => {
+          const isActive = activeButton === c.id;
+          const isDisabled = sequence.length === 0 || isPlaying || Boolean(dormammuMessage);
+
+          return (
+            <button
+              key={c.id}
+              onClick={() => handleButtonClick(c.id)}
+              disabled={isDisabled}
+              aria-label={`${c.label} Stone`}
+              style={{
+                width: '100%',
+                aspectRatio: '1/1',
+                borderRadius: '50%',
+                border: `3px solid ${isActive ? '#ffffff' : c.hex}`,
+                background: isActive ? c.hex : 'rgba(0,0,0,0.5)',
+                boxShadow: isActive ? `0 0 28px ${c.hex}, inset 0 0 10px rgba(255,255,255,0.6)` : 'none',
+                transition: 'all 0.15s ease',
+                cursor: isDisabled ? 'default' : 'pointer',
+                opacity: isActive ? 1 : 0.45,
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <span style={{
+                fontFamily: "'Rajdhani', sans-serif",
+                fontSize: 'clamp(0.68rem, 2.4vw, 0.85rem)',
+                fontWeight: 700,
+                letterSpacing: '1px',
+                color: isActive ? '#ffffff' : c.hex,
+                textTransform: 'uppercase',
+                textShadow: isActive ? '0 0 8px #ffffff' : 'none',
+              }}>
+                {c.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {sequence.length === 0 && !dormammuMessage && (
         <button 
           className="btn btn-primary" 
           onClick={startSequence}
-          style={{ width: '100%', padding: '1rem', fontSize: '1.2rem', fontFamily: "'Rajdhani', sans-serif", background: 'var(--time)', borderColor: 'var(--time)' }}
+          style={{
+            width: '100%',
+            maxWidth: '300px',
+            margin: '0 auto',
+            display: 'block',
+            padding: '0.85rem 1.5rem',
+            fontSize: '1rem',
+            letterSpacing: '2px',
+            fontFamily: "'Rajdhani', sans-serif",
+            background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+            border: 'none',
+            color: '#fff',
+            boxShadow: '0 4px 14px rgba(34,197,94,0.3)',
+          }}
         >
-          Initialize Time Loop
+          ⚡ Start Time Loop
         </button>
       )}
 
       {sequence.length > 0 && !dormammuMessage && (
-        <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', marginTop: '1rem' }}>
-          SEQUENCE PROGRESS: {sequence.length} / {SEQUENCE_LENGTH}
+        <div style={{ marginTop: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(255,255,255,0.6)', letterSpacing: '1.5px', marginBottom: '0.35rem' }}>
+            <span>LOOP PROGRESSION</span>
+            <span style={{ color: '#22c55e', fontWeight: 700 }}>{sequence.length} / {SEQUENCE_LENGTH}</span>
+          </div>
+          <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{
+              width: `${(sequence.length / SEQUENCE_LENGTH) * 100}%`,
+              height: '100%',
+              background: 'linear-gradient(90deg, #15803d, #22c55e)',
+              boxShadow: '0 0 10px rgba(34,197,94,0.5)',
+              transition: 'width 0.2s ease',
+            }} />
+          </div>
         </div>
       )}
     </div>

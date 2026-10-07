@@ -1053,6 +1053,7 @@ h1, h2, h3, h4 {
   font-size: 2rem;
 }
 
+.grid-5 .memory-card-front, .grid-5 .memory-card-back,
 .grid-6 .memory-card-front, .grid-6 .memory-card-back {
   font-size: clamp(0.9rem, 4vw, 1.25rem);
 }
@@ -1073,6 +1074,7 @@ h1, h2, h3, h4 {
 
 /* No ::before — label removed */
 
+.grid-5 .memory-card-front::after,
 .grid-6 .memory-card-front::after {
   font-size: 1.3rem;
 }
@@ -1101,7 +1103,7 @@ h1, h2, h3, h4 {
   border-radius: 4px;
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: clamp(0.75rem, 3.2vw, 1.1rem);
   line-height: 1;
   text-align: center;
   cursor: pointer;
@@ -1264,3 +1266,189 @@ h1, h2, h3, h4 {
   from { opacity: 0.6; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1.02); }
 }
+
+/* ── Round 3 Reality Cipher Input ── */
+@keyframes cipher-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cipher-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.4em;
+  background-color: #ff4d4d;
+  animation: cipher-blink 0.9s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+.cipher-input-container:hover .cipher-digit-input:not(.active-focus):not(.filled) {
+  border-color: rgba(226, 54, 54, 0.45);
+  background: rgba(226, 54, 54, 0.08);
+}
+
+.cipher-digit-input {
+  width: clamp(48px, 13vw, 58px);
+  height: clamp(52px, 14vw, 62px);
+  font-size: clamp(1.4rem, 4.5vw, 1.85rem);
+  font-family: 'Rajdhani', monospace, sans-serif;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: #FFFFFF;
+  outline: none;
+  caret-color: #ff4d4d;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.cipher-digit-input:hover {
+  border-color: rgba(226, 54, 54, 0.55);
+  background: rgba(226, 54, 54, 0.09);
+  box-shadow: 0 0 10px rgba(226, 54, 54, 0.25);
+}
+
+.cipher-digit-input:focus,
+.cipher-digit-input.active-focus {
+  border-color: #ff3b3b;
+  background: rgba(226, 54, 54, 0.18);
+  box-shadow: 0 0 18px rgba(226, 54, 54, 0.6), inset 0 0 8px rgba(226, 54, 54, 0.25);
+  transform: translateY(-2px) scale(1.04);
+  color: #FFFFFF;
+}
+
+.cipher-digit-input.filled {
+  border-color: rgba(226, 54, 54, 0.45);
+  background: rgba(226, 54, 54, 0.1);
+  color: #ff9494;
+}
+
+.cipher-digit-input.filled:focus,
+.cipher-digit-input.filled.active-focus {
+  border-color: #ff3b3b;
+  color: #FFFFFF;
+}
+
+/* ── Admin Search Bar ── */
+.admin-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
+}
+
+.admin-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(226, 54, 54, 0.22);
+  border-radius: 8px;
+  padding: 0.52rem 2.2rem 0.52rem 2.2rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #FFFFFF;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.admin-search-input:focus {
+  border-color: #ff4d4d;
+  background: rgba(226, 54, 54, 0.08);
+  box-shadow: 0 0 12px rgba(226, 54, 54, 0.35);
+}
+
+.admin-search-input::placeholder {
+  color: rgba(200, 206, 223, 0.45);
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.admin-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: rgba(200, 206, 223, 0.5);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.admin-search-clear {
+  position: absolute;
+  right: 0.55rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  transition: color 0.15s;
+}
+
+.admin-search-clear:hover {
+  color: #ff6b6b;
+}
+
+.admin-search-meta {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  color: var(--silver);
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+/* ── Mission Debriefing & Final Stats ── */
+.debrief-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(13, 20, 36, 0.95) 0%, rgba(8, 12, 22, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 45px rgba(56, 189, 248, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.debrief-timer-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  margin-bottom: 2rem;
+}
+
+.debrief-timer-hud.timer-warning {
+  animation: pulse-danger-timer 1s infinite alternate;
+}
+
+@keyframes pulse-danger-timer {
+  0% {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.6);
+  }
+}
+
+.debrief-stone-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 0.85rem 0.5rem;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.debrief-stone-card:hover {
+  transform: translateY(-2px);
+}
+
+

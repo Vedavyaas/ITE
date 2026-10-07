@@ -11,59 +11,43 @@ const EQUATIONS = [
   { id: 3, label: 'EQUATION 04 (Solve for w)', text: '2^(w - 5) = 8' },
 ];
 
-const RED    = '#E23636';
-const PURPLE = '#9333ea';
-const DIM    = 'rgba(255,255,255,0.55)';
+const RED = '#E23636';
 
 export default function RealityCipherGame({ onComplete }) {
-  const [digits,   setDigits]   = useState(['', '', '', '']);
-  const [complete, setComplete] = useState(false);
-  const [wrong,    setWrong]    = useState(false);
-  const inputRefs = useRef([]);
+  const [code,      setCode]      = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [complete,  setComplete]  = useState(false);
+  const [wrong,     setWrong]     = useState(false);
+  const inputRef = useRef(null);
 
-  const focusBox = (i) => {
-    if (inputRefs.current[i]) inputRefs.current[i].focus();
+  const focusInput = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
-  const handleKey = (i, e) => {
+  const handleClear = () => {
+    setCode('');
     setWrong(false);
+    focusInput();
+  };
 
-    // Paste: fill all 4 from clipboard text
-    if (e.type === 'paste') {
-      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
-      const next = ['', '', '', ''];
-      pasted.split('').forEach((ch, idx) => { next[idx] = ch; });
-      setDigits(next);
-      focusBox(Math.min(pasted.length, 3));
-      e.preventDefault();
-      return;
-    }
+  const handleChange = (e) => {
+    setWrong(false);
+    const clean = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCode(clean);
+  };
 
-    if (e.key === 'Backspace') {
-      if (digits[i] !== '') {
-        // clear current
-        const next = [...digits]; next[i] = ''; setDigits(next);
-      } else if (i > 0) {
-        // move back and clear
-        const next = [...digits]; next[i - 1] = ''; setDigits(next);
-        focusBox(i - 1);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (code.length === 4) {
+        handleSubmit();
       }
-      e.preventDefault();
-      return;
     }
-
-    if (e.key === 'ArrowLeft' && i > 0)  { focusBox(i - 1); return; }
-    if (e.key === 'ArrowRight' && i < 3) { focusBox(i + 1); return; }
-
-    const ch = e.key.replace(/\D/g, '');
-    if (!ch) return;
-    const next = [...digits]; next[i] = ch; setDigits(next);
-    if (i < 3) focusBox(i + 1);
-    e.preventDefault();
   };
 
   const handleSubmit = () => {
-    if (digits.join('') === ANSWER && !complete) {
+    if (code === ANSWER && !complete) {
       setComplete(true);
       setTimeout(() => { if (onComplete) onComplete(); }, 700);
     } else {
@@ -74,59 +58,7 @@ export default function RealityCipherGame({ onComplete }) {
   return (
     <div style={{ fontFamily: "'Rajdhani', sans-serif" }}>
 
-      {/* ══════════ TEAM NOTE ══════════ */}
-      <div style={{
-        background: 'rgba(147,51,234,0.08)',
-        border: '1px solid rgba(147,51,234,0.25)',
-        borderLeft: `3px solid ${PURPLE}`,
-        borderRadius: '8px',
-        padding: '0.75rem 1rem',
-        marginBottom: '1.25rem',
-        fontSize: '0.78rem',
-        color: DIM,
-        lineHeight: 1.6,
-      }}>
-        <span style={{ color: '#c084fc', fontWeight: 700 }}>TEAM STRATEGY — </span>
-        Each byte can be decoded <strong style={{ color: '#fff' }}>independently</strong>.
-        Assign one byte per team member, decode it separately, then combine all four digits into the final code together.
-      </div>
-
-      {/* ══════════ DECODE STEPS ══════════ */}
-      <div style={{
-        background: 'rgba(0,0,0,0.35)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '10px',
-        padding: '0.85rem 1rem',
-        marginBottom: '1.25rem',
-      }}>
-        <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', marginBottom: '0.65rem' }}>
-          ▸ DECODE PROCEDURE
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginBottom: '0.65rem' }}>
-          <span style={{ background: RED, color: '#fff', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.45rem', flexShrink: 0, letterSpacing: '1px' }}>01</span>
-          <div>
-            <div style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, marginBottom: '0.15rem' }}>Solve the Equations</div>
-            <div style={{ fontSize: '0.7rem', color: DIM, lineHeight: 1.5 }}>
-              Each equation yields a single digit. Solve for the unknown variable in each equation.
-            </div>
-          </div>
-        </div>
-
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '0.5rem 0' }} />
-
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
-          <span style={{ background: PURPLE, color: '#fff', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.45rem', flexShrink: 0, letterSpacing: '1px' }}>02</span>
-          <div>
-            <div style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, marginBottom: '0.15rem' }}>Combine the Digits</div>
-            <div style={{ fontSize: '0.7rem', color: DIM, lineHeight: 1.5 }}>
-              Enter the resulting digits in order from 01 to 04 to unlock the cipher.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════ EQUATIONS — one by one ══════════ */}
+      {/* ══════════ EQUATIONS ══════════ */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
         {EQUATIONS.map(({ id, label, text }) => (
           <div key={id} style={{
@@ -134,16 +66,17 @@ export default function RealityCipherGame({ onComplete }) {
             border: '1px solid rgba(226,54,54,0.18)',
             borderRadius: '10px',
             padding: '0.85rem 1rem',
+            transition: 'border-color 0.2s',
           }}>
-            <div style={{ fontSize: '0.48rem', color: 'rgba(226,54,54,0.55)', letterSpacing: '2px', marginBottom: '0.35rem' }}>
+            <div style={{ fontSize: '0.52rem', color: 'rgba(226,54,54,0.65)', letterSpacing: '2px', marginBottom: '0.35rem', fontWeight: 600 }}>
               {label}
             </div>
             <div style={{
               fontFamily: 'monospace',
-              fontSize: '1.35rem',
+              fontSize: 'clamp(1.1rem, 3.8vw, 1.35rem)',
               color: '#ff6b6b',
-              letterSpacing: '4px',
-              lineHeight: 1,
+              letterSpacing: 'clamp(1px, 1vw, 3px)',
+              lineHeight: 1.2,
             }}>
               {text}
             </div>
@@ -155,60 +88,148 @@ export default function RealityCipherGame({ onComplete }) {
       <div style={{
         background: 'rgba(226,54,54,0.06)',
         border: '1px solid rgba(226,54,54,0.22)',
-        borderRadius: '10px',
-        padding: '1rem',
+        borderRadius: '12px',
+        padding: '1.15rem 1rem',
       }}>
-        <div style={{ fontSize: '0.5rem', color: RED, letterSpacing: '2.5px', marginBottom: '0.85rem', textAlign: 'center' }}>
+        <div style={{
+          fontSize: '0.55rem',
+          color: RED,
+          letterSpacing: '2.5px',
+          marginBottom: '0.5rem',
+          textAlign: 'center',
+          fontWeight: 700,
+        }}>
           ▸ FINAL UNLOCK CODE
         </div>
 
-        {/* OTP-style inputs — auto-advance on digit, backspace goes back */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={el => inputRefs.current[i] = el}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={d}
-              onChange={() => {}}   /* controlled via onKeyDown */
-              onKeyDown={e => handleKey(i, e)}
-              onPaste={e => handleKey(i, e)}
-              onFocus={e => e.target.select()}
-              placeholder="-"
-              style={{
-                width: '40px',
-                height: '40px',
-                fontSize: '1.2rem',
-                fontFamily: 'monospace',
-                fontWeight: 700,
-                textAlign: 'center',
-                background: 'rgba(255,255,255,0.04)',
-                border: '2px solid rgba(255,255,255,0.12)',
-                borderRadius: '8px',
-                color: '#fff',
-                outline: 'none',
-                caretColor: 'transparent',
-              }}
-            />
-          ))}
+        <div style={{
+          textAlign: 'center',
+          fontSize: '0.72rem',
+          color: 'rgba(255,255,255,0.5)',
+          marginBottom: '0.85rem',
+          letterSpacing: '0.5px',
+        }}>
+          Tap boxes below to open keypad • Enter 4-digit code
         </div>
 
+        {/* Unified Mobile-Ready Input: transparent native tel input over 4 visual boxes */}
+        <div
+          className="cipher-input-container"
+          onClick={focusInput}
+          style={{
+            position: 'relative',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            margin: '0.5rem auto 1rem',
+            maxWidth: '320px',
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {/* Visual Digits */}
+          <div style={{
+            display: 'flex',
+            gap: 'clamp(0.5rem, 2.5vw, 0.85rem)',
+            justifyContent: 'center',
+            width: '100%',
+            pointerEvents: 'none',
+          }}>
+            {[0, 1, 2, 3].map((i) => {
+              const char = code[i] || '';
+              const isActive = isFocused && (i === code.length || (code.length === 4 && i === 3));
+              const isFilled = Boolean(char);
+
+              return (
+                <div
+                  key={i}
+                  className={`cipher-digit-input ${isActive ? 'active-focus' : ''} ${isFilled ? 'filled' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    userSelect: 'none',
+                  }}
+                >
+                  {char ? (
+                    <span>{char}</span>
+                  ) : isActive ? (
+                    <span className="cipher-cursor" />
+                  ) : (
+                    <span style={{ color: 'rgba(255,255,255,0.22)', fontSize: '1.2rem' }}>-</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Real native tel input: guarantees mobile numeric keyboard opens immediately on tap */}
+          <input
+            ref={inputRef}
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="one-time-code"
+            maxLength={4}
+            value={code}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0,
+              cursor: 'pointer',
+              fontSize: '24px', // Prevents iOS Safari auto-zoom
+              zIndex: 5,
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+            aria-label="4-digit unlock code"
+          />
+        </div>
+
+        {/* Clear Digits quick action */}
+        {code.length > 0 && !complete && (
+          <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
+            <button
+              type="button"
+              onClick={handleClear}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.45)',
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                letterSpacing: '1px',
+                textDecoration: 'underline',
+                padding: '4px 8px',
+              }}
+            >
+              Clear Digits
+            </button>
+          </div>
+        )}
+
         {wrong && !complete && (
-          <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.75rem', marginBottom: '0.75rem', letterSpacing: '1px' }}>
-            ✗ Incorrect — check your calculations
+          <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.78rem', marginBottom: '0.85rem', letterSpacing: '1px' }}>
+            ✗ Incorrect code — check your calculations
           </div>
         )}
 
         {complete ? (
           <div className="fade-in" style={{
-            padding: '0.75rem',
+            padding: '0.85rem',
             background: 'rgba(34,197,94,0.1)',
             border: '1px solid rgba(34,197,94,0.4)',
             borderRadius: '8px',
             textAlign: 'center',
-            fontSize: '0.78rem',
+            fontSize: '0.82rem',
             color: '#22c55e',
             letterSpacing: '2px',
             fontWeight: 700,
@@ -218,22 +239,24 @@ export default function RealityCipherGame({ onComplete }) {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={digits.some(d => d === '')}
+            disabled={code.length < 4}
             style={{
               width: '100%',
               padding: '0.85rem',
-              background: digits.some(d => d === '')
+              background: code.length < 4
                 ? 'rgba(255,255,255,0.05)'
                 : 'linear-gradient(135deg, #E23636 0%, #9B1C1C 100%)',
               border: 'none',
               borderRadius: '8px',
-              color: digits.some(d => d === '') ? 'rgba(255,255,255,0.3)' : '#fff',
+              color: code.length < 4 ? 'rgba(255,255,255,0.3)' : '#fff',
               fontFamily: "'Rajdhani', sans-serif",
               fontSize: '0.95rem',
               fontWeight: 700,
               letterSpacing: '2px',
               textTransform: 'uppercase',
-              cursor: digits.some(d => d === '') ? 'not-allowed' : 'pointer',
+              cursor: code.length < 4 ? 'not-allowed' : 'pointer',
+              boxShadow: code.length < 4 ? 'none' : '0 4px 14px rgba(226,54,54,0.35)',
+              transition: 'all 0.2s ease',
             }}
           >
             SUBMIT CODE
