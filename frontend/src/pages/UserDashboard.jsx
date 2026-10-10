@@ -546,23 +546,23 @@ export default function UserDashboard() {
                 fetchProgress();
               }}
               className="btn"
-              style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.05)', color: 'var(--silver)' }}
+              style={{ position: 'absolute', top: 'clamp(0.75rem, 2.5vw, 1.5rem)', left: 'clamp(0.75rem, 2.5vw, 1.5rem)', padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.05)', color: 'var(--silver)' }}
             >
               ← Back to Roadmap
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+            <div style={{ textAlign: 'center', marginTop: 'clamp(2rem, 5vw, 3rem)' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
                 <HexStoneIcon size={80} color={activeRound.color} glow={activeRound.glow} />
               </div>
-              <h1 style={{ fontSize: '2.5rem', color: 'var(--white)', marginTop: '1rem', textShadow: `0 0 20px ${activeRound.glow}` }}>
+              <h1 style={{ fontSize: 'clamp(1.6rem, 5.5vw, 2.5rem)', color: 'var(--white)', marginTop: '1rem', textShadow: `0 0 20px ${activeRound.glow}` }}>
                 {activeRound.title}
               </h1>
               
               <div className="ornament-divider" style={{ margin: '1.5rem auto' }}>◆</div>
               
-              <div style={{ textAlign: 'left', padding: '0 2rem' }}>
-                <p style={{ color: 'var(--silver)', lineHeight: '1.7', fontSize: '1.1rem' }}>
+              <div style={{ textAlign: 'left', padding: '0 clamp(0.5rem, 3vw, 2rem)' }}>
+                <p style={{ color: 'var(--silver)', lineHeight: '1.7', fontSize: 'clamp(0.9rem, 2.8vw, 1.05rem)' }}>
                   {activeRound.brief}
                 </p>
                 {activeRound.hint && (
@@ -573,7 +573,7 @@ export default function UserDashboard() {
               </div>
             </div>
 
-            <div style={{ marginTop: '3rem' }}>
+            <div style={{ marginTop: 'clamp(1.5rem, 4vw, 3rem)' }}>
               {activeRound.id === 'FIRST' ? (
                 <MindStoneRound 
                   stoneColor={activeRound.color} 

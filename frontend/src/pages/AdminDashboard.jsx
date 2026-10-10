@@ -7,7 +7,15 @@ const ROUNDS = ['YET_TO_START', 'FIRST', 'SECOND', 'THIRD'];
 const SUBROUNDS = ['YET_TO_START', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT'];
 
 function roundLabel(r) {
-  const map = { YET_TO_START: 'Yet to Start', FIRST: 'Round 1', SECOND: 'Round 2', THIRD: 'Round 3' };
+  const map = {
+    YET_TO_START: 'Yet to Start',
+    FIRST: 'Round 1',
+    SECOND: 'Round 2',
+    THIRD: 'Round 3',
+    FOURTH: 'Round 4',
+    FIFTH: 'Round 5',
+    COMPLETED: 'Completed'
+  };
   return map[r] || r;
 }
 
@@ -69,18 +77,35 @@ function LeaderboardPanel() {
   const downloadCSV = () => {
     if (!stats || stats.length === 0) return;
     
-    const headers = ["Rank", "Team Name", "Round", "Time Taken"];
+    const headers = ["Rank", "Team Name", "Members Name", "Time Taken", "Rounds Completed"];
     const exportList = search.trim() ? filteredStats : stats;
+
+    const escapeCSV = (val) => {
+      if (val == null) return '';
+      const str = String(val);
+      if (/[",\n\r]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
     const rows = exportList.map((s) => {
       const rank = stats.findIndex(item => item.teamName === s.teamName) + 1;
-      const team = s.teamName.replace(/,/g, ''); // basic escaping
-      const round = roundLabel(s.roundProgression);
+      const team = s.teamName || '';
+      const membersList = Array.isArray(s.teamMembers)
+        ? s.teamMembers.filter(m => m && String(m).trim())
+        : [];
+      const members = membersList.length > 0 ? membersList.join(', ') : '—';
       const time = formatDuration(s.timeTaken);
-      return [rank, team, round, time].join(",");
+      const roundsCompleted = roundLabel(s.roundProgression);
+
+      return [rank, team, members, time, roundsCompleted]
+        .map(escapeCSV)
+        .join(",");
     });
     
-    const csvContent = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [headers.map(escapeCSV).join(","), ...rows].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);

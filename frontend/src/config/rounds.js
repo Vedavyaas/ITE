@@ -53,8 +53,8 @@ export const ROUNDS = [
     glow:  'rgba(168,85,247,0.55)',
     emoji: '💜',
     title: 'The Power Stone',
-    brief: 'Calibrate the Arc Reactor by matching your waveform to the target signal. Adjust Frequency and Amplitude until you reach ≥ 88% correlation, then hold for 3 seconds.',
-    hint:  'Phase is auto-synchronized. Tune Frequency to match wave cycles, then Amplitude to match wave height.',
+    brief: 'Calibrate the Arc Reactor by matching your waveform to the target signal. Adjust Frequency, Phase, and Amplitude until you reach ≥ 88% correlation, then hold for 5 seconds.',
+    hint:  'Tune Frequency to match wave cycles, Phase to align horizontal shift, and Amplitude to match wave height.',
   },
   {
     id:    'FIFTH',

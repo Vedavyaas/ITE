@@ -90,7 +90,7 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
           lineHeight: '1.5',
           marginBottom: '1.25rem',
         }}>
-          Adjust the Frequency and Amplitude sliders until your live waveform matches the target resonance signature.
+          Adjust the Frequency, Phase Offset, and Amplitude sliders until your live waveform matches the target resonance signature.
         </p>
 
         {/* 3 Step Instruction Cards */}
@@ -111,7 +111,7 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
               1. TUNE SLIDERS
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--silver)', lineHeight: '1.4' }}>
-              Adjust <strong style={{ color: '#fff' }}>Frequency</strong> (cycles) and <strong style={{ color: '#fff' }}>Amplitude</strong> (height).
+              Adjust <strong style={{ color: '#00ffaa' }}>Frequency</strong>, <strong style={{ color: '#00d4ff' }}>Phase</strong>, and <strong style={{ color: '#a855f7' }}>Amplitude</strong>.
             </div>
           </div>
 
@@ -136,10 +136,10 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
             padding: '0.75rem',
           }}>
             <div style={{ fontSize: '0.62rem', color: '#a855f7', letterSpacing: '1px', fontWeight: 700, marginBottom: '0.25rem' }}>
-              3. HOLD 3 SECONDS
+              3. HOLD 5 SECONDS
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--silver)', lineHeight: '1.4' }}>
-              Hold steady for <strong style={{ color: '#fff' }}>3 seconds</strong> before the 50s timer expires.
+              Hold steady for <strong style={{ color: '#fff' }}>5 seconds</strong> before the 60s timer expires.
             </div>
           </div>
         </div>
@@ -202,7 +202,7 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
           margin: '0 auto',
           lineHeight: '1.4',
         }}>
-          Get ready to tune <span style={{ color: '#00ffaa', fontWeight: 700 }}>Frequency</span> and <span style={{ color: '#a855f7', fontWeight: 700 }}>Amplitude</span>.
+          Tune <span style={{ color: '#00ffaa', fontWeight: 700 }}>Frequency</span>, <span style={{ color: '#00d4ff', fontWeight: 700 }}>Phase</span>, and <span style={{ color: '#a855f7', fontWeight: 700 }}>Amplitude</span>.
         </p>
       </div>
     );
@@ -210,11 +210,18 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'failed') {
     return (
-      <div className="card fade-in" style={{ padding: '3rem 2rem', textAlign: 'center', border: '1px solid #ef4444', background: 'rgba(239,68,68,0.05)' }}>
-        <h2 style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '1rem', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '2px' }}>
+      <div className="card fade-in" style={{
+        padding: 'clamp(2rem, 6vw, 3rem) clamp(1rem, 4vw, 2rem)',
+        textAlign: 'center',
+        border: '1px solid #ef4444',
+        background: 'rgba(239,68,68,0.05)',
+        maxWidth: '560px',
+        margin: '0 auto',
+      }}>
+        <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: '#ef4444', marginBottom: '1rem', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '2px' }}>
           RESONANCE LOCK FAILED
         </h2>
-        <p style={{ color: 'var(--silver)', marginBottom: '0.75rem' }}>
+        <p style={{ color: 'var(--silver)', marginBottom: '0.75rem', lineHeight: '1.5' }}>
           Time expired before the waveform could lock onto the target signature. The reactor's parameters drifted too far off resonance.
         </p>
         <p style={{ color: '#fca5a5', fontStyle: 'italic', marginBottom: '2rem', fontSize: '0.95rem' }}>
@@ -229,9 +236,16 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
 
   if (phase === 'won') {
     return (
-      <div className="card fade-in" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(180deg, rgba(10,5,25,1) 0%, rgba(20,0,40,0.9) 100%)', border: '1px solid rgba(168,85,247,0.3)' }}>
+      <div className="card fade-in" style={{
+        padding: 'clamp(2rem, 6vw, 3rem) clamp(1rem, 4vw, 2rem)',
+        textAlign: 'center',
+        background: 'linear-gradient(180deg, rgba(10,5,25,1) 0%, rgba(20,0,40,0.9) 100%)',
+        border: '1px solid rgba(168,85,247,0.3)',
+        maxWidth: '560px',
+        margin: '0 auto',
+      }}>
         <HexStoneIcon size={80} color={stoneColor} glow={stoneGlow} />
-        <h2 style={{ fontSize: '1.8rem', color: '#a855f7', marginTop: '1.5rem', marginBottom: '0.75rem', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '2px' }}>
+        <h2 style={{ fontSize: 'clamp(1.4rem, 5vw, 1.8rem)', color: '#a855f7', marginTop: '1.5rem', marginBottom: '0.75rem', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '2px' }}>
           Resonance Lock Achieved
         </h2>
         <p style={{ color: 'var(--silver)', marginBottom: '0.75rem', lineHeight: '1.6' }}>
@@ -254,7 +268,7 @@ export default function PowerStoneRound({ onComplete, stoneColor, stoneGlow }) {
   }
 
   return (
-    <div className="fade-in" style={{ padding: '1rem' }}>
+    <div className="fade-in" style={{ padding: 'clamp(0.25rem, 2vw, 0.75rem) 0' }}>
       <PowerCoreGame onWin={handleWin} onFail={handleFail} />
     </div>
   );

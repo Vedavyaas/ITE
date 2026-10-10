@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 // ── Target signal (hidden from player) ───────────────────────────────────────
-const TGT_FREQ = 1.2;   // Hz
+const TGT_FREQ = 1.2;    // Hz
 const TGT_PHASE = 0;     // degrees
-const TGT_AMP = 1.0;   // normalised
+const TGT_AMP = 1.0;     // normalised
 
 // ── Game rules ───────────────────────────────────────────────────────────────
-const DURATION = 50;   // seconds (reduced by 10s from 60s)
-const LOCK_REQUIRED = 3;    // seconds above threshold to win
-const MATCH_THRESHOLD = 88;   // % match required
+const DURATION = 60;         // seconds
+const LOCK_REQUIRED = 5;     // seconds above threshold to win (5 seconds hold)
+const MATCH_THRESHOLD = 88;  // % match required
 
 // ── Player starting values ───────────────────────────────────────────────────
 const INIT_FREQ = 1.85;
-const INIT_PHASE = 0;   // Phase is automatically synchronized and locked to target (0°)
+const INIT_PHASE = 115;      // Player tunes phase offset towards 0°
 const INIT_AMP = 0.55;
 
 // ── Compute RMS-based match % ─────────────────────────────────────────────────
@@ -21,9 +21,10 @@ function calcMatch(freq, phaseDeg, amp) {
   const dur = 2 / TGT_FREQ;
   let errSum = 0, tgtSum = 0;
   const pr = phaseDeg * Math.PI / 180;
+  const tr = TGT_PHASE * Math.PI / 180;
   for (let i = 0; i < N; i++) {
     const t = (i / N) * dur;
-    const ty = Math.sin(2 * Math.PI * TGT_FREQ * t) * TGT_AMP;
+    const ty = Math.sin(2 * Math.PI * TGT_FREQ * t + tr) * TGT_AMP;
     const py = Math.sin(2 * Math.PI * freq * t + pr) * amp;
     errSum += (ty - py) ** 2;
     tgtSum += ty ** 2;
@@ -33,118 +34,119 @@ function calcMatch(freq, phaseDeg, amp) {
   return Math.max(0, Math.min(100, (1 - rmsErr / (rmsTgt * 2.2)) * 100));
 }
 
-// ── Custom tech slider with expanded touch target ────────────────────────────
-function TechSlider({ id, label, value, min, max, step, unit, onChange, color, subLabel }) {
+// ── Custom tech slider with touch/pointer support (no numeric readouts) ───────
+function TechSlider({ id, label, value, min, max, step, onChange, color }) {
   const trackRef = useRef(null);
   const dragging = useRef(false);
-  const pct = ((value - min) / (max - min)) * 100;
+  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+  const decimals = step < 0.1 ? 2 : step < 1 ? 1 : 0;
 
   const snap = useCallback((raw) => Math.round(raw / step) * step, [step]);
 
   const fromEvent = useCallback((clientX) => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect) return value;
-    const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    return Math.max(min, Math.min(max, snap(min + x * (max - min))));
-  }, [min, max, snap, value]);
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const calculated = snap(min + ratio * (max - min));
+    const clamped = Math.max(min, Math.min(max, calculated));
+    return Number(clamped.toFixed(decimals));
+  }, [min, max, snap, value, decimals]);
 
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!dragging.current) return;
-      const cx = e.touches ? e.touches[0].clientX : e.clientX;
-      onChange(fromEvent(cx));
-    };
-    const onUp = () => { dragging.current = false; };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, { passive: true });
-    window.addEventListener('touchend', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onUp);
-    };
-  }, [fromEvent, onChange]);
-
-  const startDrag = useCallback((e) => {
+  const handlePointerDown = (e) => {
     dragging.current = true;
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    onChange(fromEvent(cx));
-    e.preventDefault();
-  }, [fromEvent, onChange]);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    onChange(fromEvent(e.clientX));
+  };
+
+  const handlePointerMove = (e) => {
+    if (!dragging.current) return;
+    onChange(fromEvent(e.clientX));
+  };
+
+  const handlePointerUp = (e) => {
+    if (dragging.current) {
+      dragging.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   return (
     <div style={{
       background: 'rgba(0,6,18,0.92)',
-      border: `1px solid ${color}35`,
+      border: `1px solid ${color}30`,
       borderLeft: `3px solid ${color}`,
-      borderRadius: '8px',
-      padding: '0.85rem 1.1rem',
+      borderRadius: '6px',
+      padding: '0.35rem 0.65rem',
       userSelect: 'none',
+      WebkitUserSelect: 'none',
     }}>
-
-      {/* ── Row 1: Label + Value ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.45rem' }}>
-        <div>
-          <span style={{ fontSize: '0.62rem', color, letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 700 }}>
-            {label}
-          </span>
-          {subLabel && (
-            <span style={{ fontSize: '0.52rem', color: `${color}88`, marginLeft: '0.5rem', letterSpacing: '1px', fontWeight: 600 }}>{subLabel}</span>
-          )}
-        </div>
-        <div>
-          <span style={{ fontSize: '1.5rem', fontFamily: "'Rajdhani', monospace", color, fontWeight: 700, lineHeight: 1 }}>
-            {value.toFixed(step < 1 ? 2 : 0)}
-          </span>
-          <span style={{ fontSize: '0.68rem', color: `${color}88`, marginLeft: '2px' }}>{unit}</span>
-        </div>
+      {/* ── Parameter Label Only (no numeric readouts) ── */}
+      <div style={{ marginBottom: '0.15rem' }}>
+        <span style={{
+          fontSize: 'clamp(0.6rem, 1.8vw, 0.68rem)',
+          color,
+          letterSpacing: '1.4px',
+          textTransform: 'uppercase',
+          fontWeight: 700,
+        }}>
+          {label}
+        </span>
       </div>
 
-      {/* ── Row 2: Track with generous touch area for mobile ── */}
+      {/* ── Touch & pointer track ── */}
       <div
         id={id}
         ref={trackRef}
-        onMouseDown={startDrag}
-        onTouchStart={startDrag}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         style={{
           position: 'relative',
-          padding: '10px 0',
-          cursor: 'ew-resize',
-          marginBottom: '0.1rem',
+          padding: '6px 0',
+          cursor: 'pointer',
           touchAction: 'none',
         }}
       >
         <div style={{
           position: 'relative',
-          height: '8px',
+          height: '6px',
           background: 'rgba(255,255,255,0.08)',
-          borderRadius: '4px',
+          borderRadius: '3px',
         }}>
           <div style={{
-            position: 'absolute', left: 0, top: 0,
-            height: '100%', width: `${pct}%`,
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            height: '100%',
+            width: `${pct}%`,
             background: `linear-gradient(90deg, ${color}55, ${color})`,
-            borderRadius: '4px',
-            boxShadow: `0 0 8px ${color}66`,
+            borderRadius: '3px',
+            boxShadow: `0 0 6px ${color}66`,
           }} />
           <div style={{
             position: 'absolute',
-            top: '50%', left: `${pct}%`,
+            top: '50%',
+            left: `${pct}%`,
             transform: 'translate(-50%, -50%)',
-            width: '22px', height: '22px',
+            width: '18px',
+            height: '18px',
             borderRadius: '50%',
-            background: `radial-gradient(circle, white 20%, ${color} 70%)`,
-            boxShadow: `0 0 10px ${color}, 0 0 20px ${color}55`,
-            border: '2px solid rgba(255,255,255,0.4)',
+            background: `radial-gradient(circle, white 25%, ${color} 75%)`,
+            boxShadow: `0 0 8px ${color}, 0 0 16px ${color}55`,
+            border: '2px solid rgba(255,255,255,0.6)',
             cursor: 'ew-resize',
+            pointerEvents: 'none',
           }} />
         </div>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.48rem', color: 'rgba(255,255,255,0.25)' }}>
-        <span>{min}{unit}</span>
-        <span>{max}{unit}</span>
       </div>
     </div>
   );
@@ -159,6 +161,7 @@ export default function PowerCoreGame({ onWin, onFail }) {
   const [matchPct, setMatchPct] = useState(0);
   const [lockTime, setLockTime] = useState(0);
   const [freq, setFreq] = useState(INIT_FREQ);
+  const [phase, setPhase] = useState(INIT_PHASE);
   const [amp, setAmp] = useState(INIT_AMP);
 
   const G = useRef({
@@ -168,12 +171,12 @@ export default function PowerCoreGame({ onWin, onFail }) {
     lastTime: null,
     status: 'playing',
     freq: INIT_FREQ,
-    phase: 0,
+    phase: INIT_PHASE,
     amp: INIT_AMP,
   });
 
   // ── Draw ──────────────────────────────────────────────────────────────────
-  const drawFrame = useCallback((offset, freq, phaseDeg, amp, matchPct) => {
+  const drawFrame = useCallback((offset, freqVal, phaseDeg, ampVal, matchPctVal) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -183,7 +186,7 @@ export default function PowerCoreGame({ onWin, onFail }) {
     const ampPx = H * 0.34;
     const DUR = 2 / TGT_FREQ; // time window = 2 target periods
     const phRad = phaseDeg * Math.PI / 180;
-    const locked = matchPct >= MATCH_THRESHOLD;
+    const locked = matchPctVal >= MATCH_THRESHOLD;
 
     // Background
     ctx.fillStyle = '#000a14';
@@ -191,17 +194,33 @@ export default function PowerCoreGame({ onWin, onFail }) {
 
     // CRT scanlines
     ctx.fillStyle = 'rgba(0,0,0,0.1)';
-    for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 2);
+    for (let y = 0; y < H; y += 4) {
+      ctx.fillRect(0, y, W, 2);
+    }
 
     // Grid
     ctx.strokeStyle = 'rgba(0,255,160,0.055)';
     ctx.lineWidth = 1;
-    for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(W / 8 * i, 0); ctx.lineTo(W / 8 * i, H); ctx.stroke(); }
-    for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(0, H / 4 * i); ctx.lineTo(W, H / 4 * i); ctx.stroke(); }
+    for (let i = 1; i < 8; i++) {
+      ctx.beginPath();
+      ctx.moveTo((W / 8) * i, 0);
+      ctx.lineTo((W / 8) * i, H);
+      ctx.stroke();
+    }
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, (H / 4) * i);
+      ctx.lineTo(W, (H / 4) * i);
+      ctx.stroke();
+    }
+
     // Centre dashed
     ctx.strokeStyle = 'rgba(0,255,160,0.12)';
     ctx.setLineDash([4, 6]);
-    ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(W, midY); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, midY);
+    ctx.lineTo(W, midY);
+    ctx.stroke();
     ctx.setLineDash([]);
 
     // ── Error/diff wave (faint red fill between the two waves) ──
@@ -214,12 +233,16 @@ export default function PowerCoreGame({ onWin, onFail }) {
       for (let x = 0; x <= W; x++) {
         const t = (x / W) * DUR;
         const y = midY + Math.sin(2 * Math.PI * TGT_FREQ * t - offset) * ampPx;
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
       // Bottom pass: player (reverse)
       for (let x = W; x >= 0; x--) {
         const t = (x / W) * DUR;
-        const y = midY + Math.sin(2 * Math.PI * freq * t + phRad - offset) * ampPx * amp;
+        const y = midY + Math.sin(2 * Math.PI * freqVal * t + phRad - offset) * ampPx * ampVal;
         ctx.lineTo(x, y);
       }
       ctx.closePath();
@@ -236,7 +259,11 @@ export default function PowerCoreGame({ onWin, onFail }) {
     for (let x = 0; x <= W; x++) {
       const t = (x / W) * DUR;
       const y = midY + Math.sin(2 * Math.PI * TGT_FREQ * 2 * t - offset * 1.8) * ampPx * 0.4;
-      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
     }
     ctx.stroke();
     ctx.restore();
@@ -251,9 +278,14 @@ export default function PowerCoreGame({ onWin, onFail }) {
     for (let x = 0; x <= W; x++) {
       const t = (x / W) * DUR;
       const y = midY + Math.sin(2 * Math.PI * TGT_FREQ * t - offset) * ampPx;
-      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
     }
     ctx.stroke();
+
     // bright centre line
     ctx.shadowBlur = 3;
     ctx.strokeStyle = 'rgba(255,255,255,0.35)';
@@ -262,7 +294,11 @@ export default function PowerCoreGame({ onWin, onFail }) {
     for (let x = 0; x <= W; x++) {
       const t = (x / W) * DUR;
       const y = midY + Math.sin(2 * Math.PI * TGT_FREQ * t - offset) * ampPx;
-      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
     }
     ctx.stroke();
     ctx.restore();
@@ -278,8 +314,12 @@ export default function PowerCoreGame({ onWin, onFail }) {
     ctx.beginPath();
     for (let x = 0; x <= W; x++) {
       const t = (x / W) * DUR;
-      const y = midY + Math.sin(2 * Math.PI * freq * t + phRad - offset) * ampPx * amp;
-      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      const y = midY + Math.sin(2 * Math.PI * freqVal * t + phRad - offset) * ampPx * ampVal;
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
     }
     ctx.stroke();
     ctx.setLineDash([]);
@@ -298,7 +338,11 @@ export default function PowerCoreGame({ onWin, onFail }) {
       for (let x = 0; x <= W; x++) {
         const t = (x / W) * DUR;
         const y = midY + Math.sin(2 * Math.PI * TGT_FREQ * t - offset) * ampPx;
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
       ctx.stroke();
       ctx.restore();
@@ -326,10 +370,10 @@ export default function PowerCoreGame({ onWin, onFail }) {
     ctx.textAlign = 'left';
 
     // ── Match readout in canvas ──
-    const matchColor = matchPct >= MATCH_THRESHOLD ? '#00d4ff' : matchPct >= 60 ? '#00ffaa' : '#a855f7';
-    ctx.fillStyle = matchColor;
+    const matchCol = matchPctVal >= MATCH_THRESHOLD ? '#00d4ff' : matchPctVal >= 60 ? '#00ffaa' : '#a855f7';
+    ctx.fillStyle = matchCol;
     ctx.font = 'bold 13px "Rajdhani", monospace';
-    ctx.fillText(`MATCH  ${matchPct.toFixed(1)}%`, 10, H - 8);
+    ctx.fillText(`MATCH  ${matchPctVal.toFixed(1)}%`, 10, H - 8);
   }, []);
 
   // ── Game loop ─────────────────────────────────────────────────────────────
@@ -378,42 +422,58 @@ export default function PowerCoreGame({ onWin, onFail }) {
 
   // ── Slider handlers — update ref immediately, state for display ───────────
   const handleFreq = useCallback((v) => { setFreq(v); G.current.freq = v; }, []);
+  const handlePhase = useCallback((v) => { setPhase(v); G.current.phase = v; }, []);
   const handleAmp = useCallback((v) => { setAmp(v); G.current.amp = v; }, []);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const locked = matchPct >= MATCH_THRESHOLD;
   const lockPct = Math.min(100, (lockTime / LOCK_REQUIRED) * 100);
-  const timeWarn = timeLeft < 10;
+  const timeWarn = timeLeft < 12;
   const matchColor = locked ? '#00d4ff' : matchPct >= 60 ? '#00ffaa' : '#a855f7';
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0.25rem' }}>
 
-      {/* ── Top bar ── */}
+      {/* ── Top bar: Signal Match & Time Remaining ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '0.6rem',
-        marginBottom: '1rem',
+        gap: '0.4rem',
+        marginBottom: '0.5rem',
         fontFamily: "'Rajdhani', monospace",
       }}>
         {/* Match % */}
         <div style={{
           background: 'rgba(0,6,18,0.9)',
           border: `1px solid ${matchColor}44`,
-          borderRadius: '8px',
-          padding: '0.7rem 1rem',
-          boxShadow: locked ? `0 0 16px ${matchColor}22` : 'none',
+          borderRadius: '7px',
+          padding: '0.4rem 0.65rem',
+          boxShadow: locked ? `0 0 14px ${matchColor}22` : 'none',
           transition: 'all 0.3s ease',
         }}>
-          <div style={{ fontSize: '0.55rem', color: matchColor, letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.75 }}>
+          <div style={{
+            fontSize: 'clamp(0.48rem, 1.6vw, 0.55rem)',
+            color: matchColor,
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            opacity: 0.8,
+          }}>
             Signal Match
           </div>
-          <div style={{ fontSize: '2rem', color: matchColor, fontWeight: 700, lineHeight: 1.1 }}>
-            {matchPct.toFixed(1)}<span style={{ fontSize: '1rem', opacity: 0.6 }}>%</span>
+          <div style={{
+            fontSize: 'clamp(1.35rem, 4.8vw, 1.8rem)',
+            color: matchColor,
+            fontWeight: 700,
+            lineHeight: 1.1,
+          }}>
+            {matchPct.toFixed(1)}<span style={{ fontSize: '0.85rem', opacity: 0.6 }}>%</span>
           </div>
-          <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.1rem' }}>
+          <div style={{
+            fontSize: 'clamp(0.45rem, 1.4vw, 0.5rem)',
+            color: 'rgba(255,255,255,0.3)',
+            marginTop: '0.05rem',
+          }}>
             NEED ≥ {MATCH_THRESHOLD}% TO LOCK
           </div>
         </div>
@@ -422,23 +482,33 @@ export default function PowerCoreGame({ onWin, onFail }) {
         <div style={{
           background: 'rgba(0,6,18,0.9)',
           border: `1px solid ${timeWarn ? '#ff4466' : '#ffffff'}22`,
-          borderRadius: '8px',
-          padding: '0.7rem 1rem',
-          boxShadow: timeWarn ? '0 0 16px rgba(255,68,102,0.1)' : 'none',
+          borderRadius: '7px',
+          padding: '0.4rem 0.65rem',
+          boxShadow: timeWarn ? '0 0 14px rgba(255,68,102,0.1)' : 'none',
         }}>
-          <div style={{ fontSize: '0.55rem', color: timeWarn ? '#ff4466' : 'rgba(255,255,255,0.4)', letterSpacing: '3px', textTransform: 'uppercase' }}>
+          <div style={{
+            fontSize: 'clamp(0.48rem, 1.6vw, 0.55rem)',
+            color: timeWarn ? '#ff4466' : 'rgba(255,255,255,0.4)',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+          }}>
             Time Remaining
           </div>
           <div style={{
-            fontSize: '2rem',
+            fontSize: 'clamp(1.35rem, 4.8vw, 1.8rem)',
             color: timeWarn ? '#ff4466' : 'var(--white)',
-            fontWeight: 700, lineHeight: 1.1,
+            fontWeight: 700,
+            lineHeight: 1.1,
             animation: timeWarn ? 'pulse-success 0.7s infinite' : 'none',
           }}>
-            {Math.max(0, timeLeft).toFixed(1)}<span style={{ fontSize: '1rem', opacity: 0.5 }}>s</span>
+            {Math.max(0, timeLeft).toFixed(1)}<span style={{ fontSize: '0.85rem', opacity: 0.5 }}>s</span>
           </div>
-          <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '0.1rem' }}>
-            REACTOR WINDOW (50s)
+          <div style={{
+            fontSize: 'clamp(0.45rem, 1.4vw, 0.5rem)',
+            color: 'rgba(255,255,255,0.25)',
+            marginTop: '0.05rem',
+          }}>
+            REACTOR WINDOW ({DURATION}s)
           </div>
         </div>
       </div>
@@ -448,51 +518,53 @@ export default function PowerCoreGame({ onWin, onFail }) {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        fontSize: '0.68rem',
-        marginBottom: '0.45rem',
-        padding: '0 0.25rem',
+        flexWrap: 'wrap',
+        gap: '0.2rem 0.4rem',
+        fontSize: 'clamp(0.58rem, 1.8vw, 0.66rem)',
+        marginBottom: '0.3rem',
+        padding: '0 0.2rem',
         fontFamily: "'Rajdhani', sans-serif",
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ color: '#00ffaa', fontWeight: 900 }}>―</span>
           <span style={{ color: '#00ffaa', fontWeight: 600 }}>Target Signal</span>
-          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.62rem' }}>({TGT_FREQ.toFixed(2)} Hz)</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ color: '#00d4ff', fontWeight: 900 }}>┄</span>
           <span style={{ color: '#00d4ff', fontWeight: 600 }}>Your Waveform</span>
-          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.62rem' }}>(Live)</span>
         </div>
       </div>
 
       {/* ── Oscilloscope ── */}
       <div style={{
         position: 'relative',
-        borderRadius: '10px',
+        borderRadius: '8px',
         overflow: 'hidden',
         border: `1px solid ${locked ? 'rgba(0,212,255,0.55)' : 'rgba(0,255,160,0.18)'}`,
         boxShadow: locked
-          ? '0 0 40px rgba(0,212,255,0.2), 0 0 80px rgba(0,212,255,0.06)'
-          : '0 0 20px rgba(0,0,0,0.8)',
-        marginBottom: '1rem',
+          ? '0 0 30px rgba(0,212,255,0.2), 0 0 60px rgba(0,212,255,0.06)'
+          : '0 0 16px rgba(0,0,0,0.8)',
+        marginBottom: '0.5rem',
         transition: 'box-shadow 0.5s ease, border-color 0.5s ease',
       }}>
         <canvas
           ref={canvasRef}
           width={620}
-          height={210}
-          style={{ display: 'block', width: '100%', height: 'auto' }}
+          height={160}
+          style={{ display: 'block', width: '100%', height: 'auto', maxHeight: '160px' }}
         />
         {locked && (
           <div style={{
-            position: 'absolute', top: '10px', right: '12px',
-            background: 'rgba(0,212,255,0.12)',
+            position: 'absolute',
+            top: '6px',
+            right: '8px',
+            background: 'rgba(0,212,255,0.14)',
             border: '1px solid rgba(0,212,255,0.7)',
             borderRadius: '4px',
-            padding: '3px 10px',
-            fontSize: '0.65rem',
+            padding: '2px 7px',
+            fontSize: 'clamp(0.52rem, 1.6vw, 0.62rem)',
             color: '#00d4ff',
-            letterSpacing: '2px',
+            letterSpacing: '1.2px',
             fontFamily: "'Rajdhani', monospace",
             fontWeight: 700,
             animation: 'pulse-success 1s infinite',
@@ -503,56 +575,110 @@ export default function PowerCoreGame({ onWin, onFail }) {
       </div>
 
       {/* ── Match progress + lock-in bars ── */}
-      <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+      <div style={{
+        marginBottom: '0.5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        gap: '0.5rem',
+      }}>
         {/* Match bar */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.35rem', letterSpacing: '1.5px', fontFamily: "'Rajdhani', sans-serif" }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 'clamp(0.55rem, 1.6vw, 0.62rem)',
+            color: 'rgba(255,255,255,0.4)',
+            marginBottom: '0.2rem',
+            letterSpacing: '1px',
+            fontFamily: "'Rajdhani', sans-serif",
+          }}>
             <span>SIGNAL CORRELATION</span>
-            <span style={{ color: matchColor }}>{matchPct.toFixed(1)}%</span>
+            <span style={{ color: matchColor, fontWeight: 700 }}>{matchPct.toFixed(1)}%</span>
           </div>
-          <div style={{ height: '8px', background: 'rgba(0,0,0,0.6)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{
+            height: '6px',
+            background: 'rgba(0,0,0,0.6)',
+            borderRadius: '3px',
+            overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}>
             <div style={{
               width: `${matchPct}%`,
               height: '100%',
               background: `linear-gradient(90deg, #a855f7, ${matchColor})`,
-              boxShadow: `0 0 10px ${matchColor}66`,
+              boxShadow: `0 0 8px ${matchColor}66`,
               transition: 'width 0.12s ease',
-              borderRadius: '4px',
+              borderRadius: '3px',
             }} />
           </div>
           {/* Threshold tick */}
-          <div style={{ position: 'relative', height: '14px' }}>
-            <div style={{ position: 'absolute', left: `${MATCH_THRESHOLD}%`, top: 0, width: '2px', height: '6px', background: 'rgba(255,255,255,0.25)' }} />
-            <div style={{ position: 'absolute', left: `${MATCH_THRESHOLD}%`, top: '8px', transform: 'translateX(-50%)', fontSize: '0.48rem', color: 'rgba(255,255,255,0.2)', whiteSpace: 'nowrap' }}>LOCK THR.</div>
+          <div style={{ position: 'relative', height: '12px' }}>
+            <div style={{
+              position: 'absolute',
+              left: `${MATCH_THRESHOLD}%`,
+              top: 0,
+              width: '2px',
+              height: '5px',
+              background: 'rgba(255,255,255,0.3)',
+            }} />
+            <div style={{
+              position: 'absolute',
+              left: `${MATCH_THRESHOLD}%`,
+              top: '5px',
+              transform: 'translateX(-50%)',
+              fontSize: '0.44rem',
+              color: 'rgba(255,255,255,0.25)',
+              whiteSpace: 'nowrap',
+            }}>
+              LOCK THR.
+            </div>
           </div>
         </div>
 
         {/* Lock-in hold bar */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: locked ? '#00d4ff' : 'rgba(255,255,255,0.25)', marginBottom: '0.35rem', letterSpacing: '1.5px', fontFamily: "'Rajdhani', sans-serif" }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 'clamp(0.55rem, 1.6vw, 0.62rem)',
+            color: locked ? '#00d4ff' : 'rgba(255,255,255,0.25)',
+            marginBottom: '0.2rem',
+            letterSpacing: '1px',
+            fontFamily: "'Rajdhani', sans-serif",
+          }}>
             <span>CALIBRATION HOLD</span>
-            <span>{lockPct.toFixed(0)}% — {LOCK_REQUIRED}s</span>
+            <span style={{ fontWeight: 700 }}>{lockPct.toFixed(0)}% — {LOCK_REQUIRED}s</span>
           </div>
-          <div style={{ height: '8px', background: 'rgba(0,0,0,0.6)', borderRadius: '4px', overflow: 'hidden', border: `1px solid ${locked ? 'rgba(0,212,255,0.25)' : 'rgba(255,255,255,0.05)'}` }}>
+          <div style={{
+            height: '6px',
+            background: 'rgba(0,0,0,0.6)',
+            borderRadius: '3px',
+            overflow: 'hidden',
+            border: `1px solid ${locked ? 'rgba(0,212,255,0.25)' : 'rgba(255,255,255,0.05)'}`,
+          }}>
             <div style={{
               width: `${lockPct}%`,
               height: '100%',
               background: 'linear-gradient(90deg, #00d4ff, #00ffaa)',
-              boxShadow: locked ? '0 0 12px rgba(0,212,255,0.8)' : 'none',
+              boxShadow: locked ? '0 0 10px rgba(0,212,255,0.8)' : 'none',
               transition: 'width 0.1s linear',
-              borderRadius: '4px',
+              borderRadius: '3px',
             }} />
           </div>
-          <div style={{ height: '14px', display: 'flex', alignItems: 'center', paddingLeft: '2px' }}>
-            <span style={{ fontSize: '0.5rem', color: locked ? '#00d4ff' : 'rgba(255,255,255,0.15)', letterSpacing: '1px' }}>
+          <div style={{ height: '12px', display: 'flex', alignItems: 'center', paddingLeft: '2px' }}>
+            <span style={{
+              fontSize: '0.48rem',
+              color: locked ? '#00d4ff' : 'rgba(255,255,255,0.2)',
+              letterSpacing: '0.6px',
+            }}>
               {locked ? '⚡ HOLD STEADY — LOCKING IN' : `Reach ${MATCH_THRESHOLD}% to start lock`}
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── Two Sliders: Frequency & Amplitude ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+      {/* ── Three Sliders: Frequency, Phase, Amplitude ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.4rem', marginBottom: '0.5rem' }}>
         <TechSlider
           id="slider-freq"
           label="Frequency"
@@ -560,10 +686,18 @@ export default function PowerCoreGame({ onWin, onFail }) {
           min={0.5}
           max={2.5}
           step={0.01}
-          unit=" Hz"
           color="#00ffaa"
-          subLabel={`TARGET: ${TGT_FREQ.toFixed(2)} Hz`}
           onChange={handleFreq}
+        />
+        <TechSlider
+          id="slider-phase"
+          label="Phase Offset"
+          value={phase}
+          min={-180}
+          max={180}
+          step={1}
+          color="#00d4ff"
+          onChange={handlePhase}
         />
         <TechSlider
           id="slider-amp"
@@ -572,32 +706,9 @@ export default function PowerCoreGame({ onWin, onFail }) {
           min={0.3}
           max={1.8}
           step={0.01}
-          unit="×"
           color="#a855f7"
-          subLabel={`TARGET: ${TGT_AMP.toFixed(2)}×`}
           onChange={handleAmp}
         />
-      </div>
-
-      {/* ── Hint strip ── */}
-      <div style={{
-        padding: '0.65rem 0.9rem',
-        background: 'rgba(0,0,0,0.5)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '8px',
-        fontSize: '0.72rem',
-        color: 'rgba(255,255,255,0.5)',
-        letterSpacing: '0.5px',
-        fontFamily: "'Rajdhani', sans-serif",
-        display: 'flex',
-        gap: '0.75rem',
-        justifyContent: 'space-around',
-        flexWrap: 'wrap',
-        textAlign: 'center',
-      }}>
-        <span><strong style={{ color: '#00ffaa' }}>FREQ:</strong> Set wave cycles ({TGT_FREQ.toFixed(2)} Hz)</span>
-        <span><strong style={{ color: '#a855f7' }}>AMP:</strong> Set wave height ({TGT_AMP.toFixed(2)}×)</span>
-        <span><strong style={{ color: '#00d4ff' }}>PHASE:</strong> Auto-Locked (0°) ✓</span>
       </div>
     </div>
   );
